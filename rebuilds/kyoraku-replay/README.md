@@ -18,7 +18,7 @@ Kyoraku Replay أداة أصلية مكتوبة من الصفر بـ JavaScript 
 | **بيانات حقيقية: NQ futures، NAS100USD، المؤشرات...** | 10 أسواق OHLCV حقيقية **مدمجة** بترخيص MIT + تحديث مباشر اختياري + استيراد CSV |
 | **Trailing Stop** | وقف متحرك كيبدأ بعد `N × R` وكيتبع القمة/القاع بمسافة بالبيب، عمري ما كيرجع للور |
 | **إغلاق جزئي** | أزرار 25% / 50% / 75% + إغلاق جزئي أوتوماتيكي عند `N × R`؛ كل حصة كتولّي سطر مستقل فالدفتر بـ R ديالها، والرجوع للور كيعيد الحجم |
-| **نسخة جاهزة للبيع** | ترخيص، شروط، خصوصية، إسناد البيانات، دليل نشر، فحص آلي (20 test + smoke)، وconfig ديال Vercel |
+| **نسخة جاهزة للبيع** | ترخيص، شروط، خصوصية، إسناد البيانات، دليل نشر، فحص آلي (25 test + smoke)، وconfig ديال Vercel |
 
 ---
 
@@ -79,11 +79,12 @@ npm run serve                 # http://0.0.0.0:4173
 
 ```bash
 npm run check    # syntax check لكل ملفات JS + serve.mjs + api/ohlcv.js
-npm test         # 20 test: بيانات، OHLCV، محرك، trailing، partial، rewind، إحصاء، i18n، ترحيل state
-npm run verify   # الاتنين
+npm test         # 25 test: 20 محرك/بيانات + 5 ديال api/ohlcv (upstream موكّى)
+npm run smoke    # اختياري: jsdom على الواجهة فوق HTTP (يحتاج npm i --no-save jsdom@26)
+npm run verify   # check + test + smoke (كلشي)
 ```
 
-إضافة: jsdom smoke على الواجهة الحقيقية (تبويبات، فتح صفقات، إغلاق جزئي، CSV، تبديل اللغة، تخزين) → 0 runtime errors.
+الـ smoke كيجرب الواجهة الحقيقية فوق سيرفر HTTP: تحميل `data/NQ.js` ديناميكياً، تبديل السوق، الوقف المتحرك، الإغلاق الجزئي، كل التبويبات، تبديل اللغة والتخزين → 0 runtime errors. إلى ما كنش jsdom منصّب كيطبع `SKIP` بلا ما يخسّر الـ verify.
 
 ---
 

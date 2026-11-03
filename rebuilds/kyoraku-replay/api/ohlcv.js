@@ -17,7 +17,10 @@ const RANGES = new Set(['1d', '5d', '1mo', '3mo', '6mo', '1y', '2y', '5y', 'ytd'
 function send(res, status, payload) {
   res.status(status);
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=300');
+  // Never cache failures: a transient 429/502 must not stick to the CDN for a minute.
+  res.setHeader('Cache-Control', status === 200
+    ? 's-maxage=60, stale-while-revalidate=300'
+    : 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.end(JSON.stringify(payload));

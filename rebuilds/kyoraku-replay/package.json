@@ -8,8 +8,8 @@
   "scripts": {
     "serve": "node serve.mjs",
     "start": "node serve.mjs",
-    "check": "node --check serve.mjs && node --check api/ohlcv.js && for f in js/*.js data/catalog.js; do node --check \"$f\" || exit 1; done && node --check tests/run.mjs",
-    "test": "node tests/run.mjs",
+    "check": "node --check serve.mjs && node --check api/ohlcv.js && for f in js/*.js data/catalog.js; do node --check \"$f\" || exit 1; done && node --check tests/run.mjs && node --check tests/api.mjs && node --check tests/browser-smoke.mjs",
+    "test": "node tests/run.mjs && node tests/api.mjs",
     "smoke": "node tests/browser-smoke.mjs",
     "verify": "npm run check && npm test && npm run smoke",
     "data": "python3 scripts/build-real-data.py --max-bars 6000"

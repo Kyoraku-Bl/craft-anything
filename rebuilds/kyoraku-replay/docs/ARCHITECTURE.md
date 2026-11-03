@@ -23,6 +23,8 @@ js/app.js                   ربط DOM، rendering، أحداث المستخدم
 api/ohlcv.js                Vercel serverless relay اختياري (Yahoo chart API)
 scripts/build-real-data.py  إعادة توليد data/ من مصادر MIT
 tests/run.mjs               20 اختبار Node (vm)
+tests/api.mjs               5 اختبارات لـ api/ohlcv.js (upstream موكّى)
+tests/browser-smoke.mjs     smoke اختياري (jsdom) على الواجهة فوق HTTP
 serve.mjs                   سيرفر ستاتيكي صفري التبعيات (0.0.0.0:4173)
 vercel.json                 إعداد النشر + headers
 ```
@@ -158,7 +160,7 @@ if (buy ? newSL > sl : newSL < sl) sl = newSL
 
 ```
 npm run check    node --check لكل ملف + serve.mjs + api/ohlcv.js
-npm test         20 اختبار: حتمية البيانات، OHLC، aggregation، CSV،
+npm test         25 اختبار (20 + 5 api): حتمية البيانات، OHLC، aggregation، CSV،
                  indicators، replay، sizing، SL/TP، rewind، stats، MC،
                  prop، sanitize، i18n، datasets MIT، effectiveTf،
                  normalizeYahoo، trailing، partial، auto-partial،

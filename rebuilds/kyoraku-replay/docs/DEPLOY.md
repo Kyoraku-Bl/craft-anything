@@ -13,8 +13,8 @@
 |---|---|
 | Production alias | `kyoraku-replay.vercel.app` |
 | النسخة الاحتياطية | `kyoraku-replay-kyoraku-bl.vercel.app` |
-| Deployment ID | `dpl_7qyvJ2yxTAViEnRzLfW81tyYn4z6` |
 | Project ID | `prj_UouHRd1XlFwFfyBmf0c5fEgxgLbm` |
+| أحدث Deployment | شوف tab **Deployments** فالداشبورد (كيتجدّد مع كل push) |
 | الحالة | `READY · PROMOTED` |
 | Git | `Kyoraku-Bl/craft-anything` @ `arena/d032cbca-craft-anything` |
 | Root Directory | `rebuilds/kyoraku-replay` |
