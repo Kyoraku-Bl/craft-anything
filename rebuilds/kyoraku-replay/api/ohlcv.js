@@ -78,7 +78,9 @@ export default async function handler(req, res) {
         v: (quote.volume && quote.volume[i]) || 0
       });
     }
-    if (bars.length < 5) { send(res, 502, { error: 'upstream_too_few_bars' }); return; }
+    // A 5d/1d request legitimately returns 4 bars; keep the same minimum as
+    // the CSV importer (3) so every UI combination works.
+    if (bars.length < 3) { send(res, 502, { error: 'upstream_too_few_bars' }); return; }
     send(res, 200, {
       symbol, interval, range, source: 'Yahoo Finance chart API',
       currency: result.meta && result.meta.currency,

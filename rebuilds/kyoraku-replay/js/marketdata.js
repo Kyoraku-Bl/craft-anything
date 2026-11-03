@@ -104,7 +104,7 @@
     if (json && Array.isArray(json.bars)) {
       const compact = json.bars.filter((b) => b && U.isNum(b.t) &&
         [b.o, b.h, b.l, b.c].every((x) => U.isNum(x) && x > 0));
-      if (compact.length < 10) throw new Error('بيانات قليلة / not enough bars');
+      if (compact.length < 3) throw new Error('بيانات قليلة / not enough bars');
       compact.sort((a, b) => a.t - b.t);
       return compact.map((b) => ({ t: b.t, o: b.o, h: b.h, l: b.l, c: b.c, v: b.v || 0 }));
     }
@@ -122,7 +122,7 @@
       if (![o, h, l, c].every((x) => U.isNum(x) && x > 0)) continue;
       bars.push({ t: r.timestamp[i] * 1000, o, h: Math.max(o, c, h), l: Math.min(o, c, l), c, v: (q.volume && q.volume[i]) || 0 });
     }
-    if (bars.length < 10) throw new Error('بيانات قليلة / not enough bars');
+    if (bars.length < 3) throw new Error('بيانات قليلة / not enough bars');
     bars.sort((a, b) => a.t - b.t);
     return bars;
   }

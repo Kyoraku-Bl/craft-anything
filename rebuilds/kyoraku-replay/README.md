@@ -4,6 +4,8 @@
 
 > بلا حساب · بلا خطة مدفوعة · بلا API مدفوع · بلا تتبّع · كيخدم أوفلاين من بعد ما كيتحمّل.
 
+🌐 **الرابط المباشر (جاهز دلوقتي): https://kyoraku-replay.vercel.app** — افتحو وبعثو للناس مباشرة.
+
 Kyoraku Replay أداة أصلية مكتوبة من الصفر بـ JavaScript عادي (بدون أي مكتبة)، كتخليك تعاود شمعة بشمعة على **بيانات سوق حقيقية**، وتفتح صفقات تجريبية بوقف/هدف، وتشوف النتائج فالدفتر والتحليلات ومونت كارلو. كلشي كيتمّ فالمتصفح ديالك و `localStorage`.
 
 ---
@@ -55,7 +57,8 @@ npm run serve                 # http://0.0.0.0:4173
 ```
 
 ### 3) Vercel (رابط مباشر للناس)
-شوف [`docs/DEPLOY.md`](docs/DEPLOY.md) — خطوات بالتفصيل، CLI، ربط دومين، والـ `rootDirectory`.
+**منشور أصلاً**: <https://kyoraku-replay.vercel.app> (project `kyoraku-replay`، root `rebuilds/kyoraku-replay`، من الفرع `arena/d032cbca-craft-anything`).
+شوف [`docs/DEPLOY.md`](docs/DEPLOY.md) — خطوات إعادة النشر، CLI، ربط دومين، والـ `rootDirectory`.
 
 ---
 

@@ -337,6 +337,10 @@ test('live payload normalisation accepts relay JSON and raw Yahoo JSON', () => {
   assert.equal(bars[0].t, 1700000000000);
   assert.equal(bars[9].c, 6);
   assert.throws(() => RL.marketdata.normalizeYahoo({ chart: { result: null } }));
+  // short ranges (5d / 1d) are valid UI choices and must not be rejected
+  const short = { bars: compact.bars.slice(0, 3) };
+  assert.equal(RL.marketdata.normalizeYahoo(short).length, 3);
+  assert.throws(() => RL.marketdata.normalizeYahoo({ bars: compact.bars.slice(0, 2) }));
 });
 
 test('trailing stop tightens after R and never moves backwards', () => {

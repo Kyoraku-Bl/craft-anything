@@ -7,9 +7,20 @@
 
 ## ✅ الطريقة A — الرابط الجاهز (أسهل)
 
-**الرابط المباشر:** _سيتم إضافته بعد النشر في نهاية هذه الجلسة._
+### 🔗 https://kyoraku-replay.vercel.app
 
-إلى كنتي قرّيتي هاد الملف من بعد ما تسلّمات الجلسة، الرابط كيكون فالرسالة النهائية وفي `README.md`. افتحو فالمتصفح، والنسخة جاهزة مباشرة: بيانات `NQ` حقيقية كتحمّل أوتوماتيكيا، بلا تسجيل.
+| | |
+|---|---|
+| Production alias | `kyoraku-replay.vercel.app` |
+| النسخة الاحتياطية | `kyoraku-replay-kyoraku-bl.vercel.app` |
+| Deployment ID | `dpl_7qyvJ2yxTAViEnRzLfW81tyYn4z6` |
+| Project ID | `prj_UouHRd1XlFwFfyBmf0c5fEgxgLbm` |
+| الحالة | `READY · PROMOTED` |
+| Git | `Kyoraku-Bl/craft-anything` @ `arena/d032cbca-craft-anything` |
+| Root Directory | `rebuilds/kyoraku-replay` |
+| الداشبورد | <https://vercel.com/kyoraku-bl/kyoraku-replay> |
+
+افتحو فالمتصفح وابعثو للناس مباشرة: بيانات `NQ` حقيقية كتحمّل أوتوماتيكيا، بلا تسجيل، بلا درهم. إلى بغيتي تعاود تنشر من بعد تعديل، إمّا `git push` على نفس الفرع + Redeploy من الداشبورد، وإمّا الطريقة C.
 
 ---
 

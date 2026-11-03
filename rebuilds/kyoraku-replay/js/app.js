@@ -107,7 +107,7 @@
     if (badge) {
       let text = T.t('demoGroup');
       let kind = 'demo';
-      if (sym.bundled) { text = 'REAL · MIT · ' + (sym.baseTf || '1m'); kind = 'real'; }
+      if (sym.bundled) { text = 'REAL · MIT'; kind = 'real'; }
       else if (sym.real && sym.license === 'runtime') { text = 'LIVE · ' + (sym.source || 'Yahoo'); kind = 'live'; }
       else if (sym.custom) { text = 'CSV · ' + (sym.baseTf || '1m'); kind = 'demo'; }
       badge.textContent = text;
