@@ -53,7 +53,8 @@ assert.equal(evaluated.length, 1, 'results must not be scored twice');
 await act(async () => click('Tap and speak'));
 const denied = FakeRecognition.instances[1];
 await act(async () => denied.onerror?.({ error: 'not-allowed' }));
-assert(document.body.textContent?.includes('Allow microphone'));
+assert(document.body.textContent?.includes('Direct speech recognition was denied'));
+assert(document.body.textContent?.includes('Try local microphone and allow model download'));
 assert(denied.aborted);
 await act(async () => click('Tap and speak'));
 const silent = FakeRecognition.instances[2];
@@ -187,6 +188,20 @@ assert(document.body.textContent?.includes('Could not download or run local reco
 assert.equal(recognized.length, 1);
 await act(async () => localRoot.unmount());
 
+// Installed profile URL must select local recognition even if the WebClip does
+// not expose standalone/display-mode (and even if the UA has been reduced).
+Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0' });
+Object.defineProperty(navigator, 'standalone', { configurable: true, value: false });
+window.history.replaceState({}, '', '/?standalone=ios');
+const profileRoot = createRoot(document.getElementById('root')!);
+await act(async () => profileRoot.render(<PronunciationRecorder targetSentence="Bonjour" audioText="Bonjour" audioLang="fr-FR" uiLang="en" onEvaluated={() => {}} />));
+await act(async () => click('Speak into mic'));
+assert(document.body.textContent?.includes('Recording: speak clearly'));
+await act(async () => profileRoot.unmount());
+assert.equal(FakeRecorder.last.state, 'inactive');
+window.history.replaceState({}, '', '/');
+Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit' });
+
 // On an iPhone Safari tab, direct speech remains the default; a service failure
 // offers keyboard dictation instead of treating it solely as microphone denial.
 Object.defineProperty(navigator, 'standalone', { configurable: true, value: false });
@@ -198,6 +213,9 @@ const iosRecognizer = FakeRecognition.instances.at(-1)!;
 await act(async () => iosRecognizer.onerror?.({error:'service-not-allowed'}));
 assert(document.body.textContent?.includes('Dictée avec le clavier iPhone'));
 assert(document.body.textContent?.includes('reconnaissance directe'));
+assert(document.body.textContent?.includes('Essayer le micro local'));
+await act(async () => click('Essayer le micro local'));
+assert(document.body.textContent?.includes('Enregistrement : parlez clairement'));
 await act(async () => root5.unmount());
 dom.window.close();
 console.log('Microphone recognition, stop, errors, retry, stale callbacks and unsupported-browser denial: OK');

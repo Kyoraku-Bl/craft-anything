@@ -59,7 +59,11 @@ function isIOSDevice(): boolean {
 }
 
 function isIOSHomeScreen(): boolean {
-  if (!isIOSDevice() || typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') return false;
+  // The installed configuration profile explicitly supplies this flag. Some
+  // WebClips do not report navigator.standalone or display-mode reliably.
+  if (new URLSearchParams(window.location.search).get('standalone') === 'ios') return true;
+  if (!isIOSDevice()) return false;
   return (navigator as Navigator & { standalone?: boolean }).standalone === true ||
     (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches);
 }
@@ -82,11 +86,13 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   const [micWarning, setMicWarning] = useState<string | null>(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
   const [dictationAvailable, setDictationAvailable] = useState(false);
+  const [localAvailable, setLocalAvailable] = useState(false);
   const [dictationText, setDictationText] = useState('');
   const [evaluationSource, setEvaluationSource] = useState<'speech' | 'dictation'>('speech');
   const dictationRef = useRef<HTMLTextAreaElement | null>(null);
   const iosHomeScreen = isIOSHomeScreen();
   const showDictation = iosHomeScreen || dictationAvailable;
+  const showLocalOption = !iosHomeScreen && (isIOSDevice() || localAvailable);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const localWorkerRef = useRef<Worker | null>(null);
   const [localStatus, setLocalStatus] = useState('');
@@ -118,6 +124,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     setMicWarning(null);
     setRecordedAudioUrl(null);
     setDictationAvailable(false);
+    setLocalAvailable(false);
     setDictationText('');
     setEvaluationSource('speech');
     latestTranscriptRef.current = '';
@@ -158,7 +165,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         return isIOSDevice() ? message('خدمة التعرف المباشر ما متوفراش فهاد الوضع. جرّب إملاء لوحة مفاتيح iPhone لتحت، أو فتح الموقع فـ Safari وتأكد من تفعيل الإملاء.', 'La reconnaissance directe n’est pas disponible ici. Utilisez la dictée du clavier iPhone ci-dessous, ou ouvrez le site dans Safari et vérifiez que la dictée est activée.', 'Direct speech recognition is unavailable here. Use iPhone keyboard dictation below, or open the site in Safari and check that Dictation is enabled.') : message('خدمة التعرف على الكلام غير متوفرة حالياً. تحقق من إعدادات الجهاز والإنترنت.', 'Le service de reconnaissance vocale est indisponible. Vérifiez les réglages et la connexion.', 'The speech recognition service is unavailable. Check device settings and internet access.');
       case 'not-allowed':
         if (iosHomeScreen) return message('التعرف المباشر ممكن ما يخدمش فتطبيق الآيفون حتى إلا كان المايك مسموح. استعمل إملاء لوحة المفاتيح أو جرّب Safari.', 'La reconnaissance directe peut être indisponible dans l’app iPhone même si le micro est autorisé. Utilisez la dictée du clavier ou essayez Safari.', 'Direct recognition may be unavailable in the iPhone app even with microphone permission. Use keyboard dictation or try Safari.');
-        return message('المايكروفون أو خدمة التعرف على الكلام ما عندهاش الإذن. سمح بالمايكروفون فإعدادات الموقع والجهاز، وجرب تفتح الرابط مباشرة فـ Chrome أو Safari.', 'Autorisez le microphone et la reconnaissance vocale dans les réglages du site et de l’appareil. Essayez directement dans Chrome ou Safari.', 'Allow microphone and speech recognition access in your site and device settings. Try opening the site directly in Chrome or Safari.');
+        return message('خدمة التعرف المباشر ترفضات، وماشي بالضرورة إذن المايك. جرب المايك المحلي لتحت؛ إلا ترفض حتى هو، سمح بالمايك فإعدادات الجهاز والموقع.', 'La reconnaissance directe a été refusée, pas forcément le microphone. Essayez le micro local ci-dessous ; si son accès est refusé, autorisez le micro dans les réglages.', 'Direct speech recognition was denied, not necessarily microphone access. Try the local microphone below; if its access is denied, allow the microphone in your device and site settings.');
       case 'audio-capture':
         return message('ما لقيناش المايكروفون أو راه مستعمل من تطبيق آخر. تأكد من المايك وجرب مرة أخرى.', 'Microphone introuvable ou utilisé par une autre application. Vérifiez-le et réessayez.', 'No microphone is available, or another app is using it. Check your microphone and try again.');
       case 'network':
@@ -269,7 +276,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     if (disabled) return;
     if (busyRef.current) {
       if (phase === 'local-processing') {
-        sessionRef.current++; clearWatchdog(); localWorkerRef.current?.terminate(); localWorkerRef.current = null; busyRef.current = false; setPhase('idle');
+        sessionRef.current++; clearWatchdog(); localWorkerRef.current?.terminate(); localWorkerRef.current = null;
+        const recorder = mediaRecorderRef.current; mediaRecorderRef.current = null;
+        if (recorder) { recorder.onstop = null; try { if (recorder.state !== 'inactive') recorder.stop(); } catch { /* already stopped */ } }
+        releaseStream(); busyRef.current = false; setPhase('idle');
       } else if (phase === 'local-recording' && mediaRecorderRef.current) {
         setPhase('local-processing'); clearWatchdog();
         try { mediaRecorderRef.current.stop(); } catch { releaseStream(); busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage('audio-capture')); }
@@ -316,6 +326,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     };
     const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
     if (!SpeechRec) {
+      setLocalAvailable(true);
       if (isIOSDevice()) {
         busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
         setMicWarning(message('التعرف المباشر غير متوفر هنا. تقدر تستعمل إملاء لوحة المفاتيح لتحت.', 'La reconnaissance directe est indisponible. Utilisez la dictée du clavier ci-dessous.', 'Direct recognition is unavailable. Use keyboard dictation below.'));
@@ -385,6 +396,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         busyRef.current = false;
         setPhase('idle');
         setMicWarning(errorMessage(event.error));
+        setLocalAvailable(true);
         if (isIOSDevice()) setDictationAvailable(true);
         try { rec.abort?.(); } catch { /* already stopped */ }
       };
@@ -403,11 +415,12 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         sessionRef.current++; recRef.current = null; busyRef.current = false; setPhase('idle');
         try { rec.abort?.(); } catch { /* already stopped */ }
         setMicWarning(errorMessage());
+        setLocalAvailable(true);
         if (isIOSDevice()) setDictationAvailable(true);
       }, 15000);
       rec.start();
     } catch {
-      clearWatchdog(); recRef.current = null; busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage()); if (isIOSDevice()) setDictationAvailable(true);
+      clearWatchdog(); recRef.current = null; busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage()); setLocalAvailable(true); if (isIOSDevice()) setDictationAvailable(true);
     }
   };
 
@@ -502,7 +515,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
 
       {/* iOS Home Screen Web Apps may expose SpeechRecognition but reject it.
           Keyboard dictation is an explicit text-comparison alternative. */}
-      {iosHomeScreen && <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{message('المايك كيخدم بنموذج مجاني على الجهاز. أول استعمال كيتحمّل تقريباً 55 ميغا أو أكثر بالإنترنت؛ ممكن ياخذ وقت، والتخزين المؤقت ماشي مضمون. الصوت ما كيتصيفطش للسيرفر، والنتيجة مقارنة النص فقط، ماشي تقييم دقة النطق. الدارجة ممكن ما تتعرفش مزيان.', 'Le micro utilise un modèle gratuit sur l’appareil. Au premier usage, environ 55 Mo ou plus sont téléchargés ; cela peut prendre du temps et le cache n’est pas garanti. L’audio n’est pas envoyé au serveur. Le score compare le texte, pas la prononciation ; la darija peut être mal reconnue.', 'The microphone uses a free on-device model. First use downloads around 55 MB or more and may take time; caching is not guaranteed. Audio is not sent to a server. The score compares text, not pronunciation; Darija may be inaccurate.')}</p>}
+      {(iosHomeScreen || showLocalOption) && <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{message('المايك المحلي كيستعمل نموذج مجاني على الجهاز. أول استعمال كيتحمّل تقريباً 55 ميغا أو أكثر بالإنترنت؛ ممكن ياخذ وقت، والتخزين المؤقت ماشي مضمون. الصوت ما كيتصيفطش للسيرفر، والنتيجة مقارنة النص فقط، ماشي تقييم دقة النطق. الدارجة ممكن ما تتعرفش مزيان.', 'Le micro local utilise un modèle gratuit sur l’appareil. Au premier usage, environ 55 Mo ou plus sont téléchargés ; cela peut prendre du temps et le cache n’est pas garanti. L’audio n’est pas envoyé au serveur. Le score compare le texte, pas la prononciation ; la darija peut être mal reconnue.', 'The local microphone uses a free on-device model. First use downloads around 55 MB or more and may take time; caching is not guaranteed. Audio is not sent to a server. The score compares text, not pronunciation; Darija may be inaccurate.')}</p>}
       {showDictation && (
         <details className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border-2 border-sky-200 dark:border-sky-800 space-y-3">
           <summary className="font-black text-sky-900 dark:text-sky-100 cursor-pointer">🎙️ {message('الإملاء بلوحة مفاتيح الآيفون', 'Dictée avec le clavier iPhone', 'Dictation with the iPhone keyboard')}</summary>
@@ -552,6 +565,14 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
               </>
             )}
           </button>
+
+          {showLocalOption && !isRecording && (
+            <button type="button" disabled={disabled} onClick={() => void startLocalMic()}
+              className="px-5 py-3 rounded-2xl border-2 border-duo-blue text-duo-blue font-black disabled:opacity-50">
+              <Mic className="inline w-5 h-5 mr-2" />
+              {message('جرّب المايك المحلي ووافق على تحميل النموذج', 'Essayer le micro local et accepter le téléchargement', 'Try local microphone and allow model download')}
+            </button>
+          )}
 
           {recordedAudioUrl && !isRecording && (
             <button
