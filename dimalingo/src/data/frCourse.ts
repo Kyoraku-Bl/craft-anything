@@ -53,7 +53,7 @@ export const frCourse: Course = {
           target: 'Je m’appelle Yassine et j’habite à Rabat',
           pronunciation: 'ʒə ma.pɛl ja.sin e ʒa.bit a ʁa.ba',
           meaning: { ar: 'اسمي ياسين وأسكن في الرباط', fr: 'Je m’appelle Yassine et j’habite à Rabat', en: 'My name is Yassine and I live in Rabat' },
-          tip: { ar: 'مع المدن نستعمل دائماً حرف الجر « à » (à Rabat / à Paris).', fr: 'Préposition « à » devant les noms de villes.', en: 'Always use "à" before city names in French.' },
+          tip: { ar: 'في هذا المثال، نستعمل « à » للتعبير عن السكن في مدينة.', fr: 'Préposition « à » devant les noms de villes.', en: 'In this example, use “à” to say you live in a city.' },
         },
         {
           key: 'fr_a1_3',

@@ -593,7 +593,7 @@ export const PracticeHubView: React.FC<PracticeHubViewProps> = ({
             <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
               {uiLang === 'ar'
                 ? 'أزيد من 80 جملة نطق لكل لغة مع دليل مخارج الحروف وتقييم فوري بالنقط!'
-                : '80+ pronunciation sentences per language with phonetic guide & live scoring!'}
+                : 'Practise sentences with audio and speech recognition when available!'}
             </p>
           </div>
           <button
@@ -656,11 +656,7 @@ export const PracticeHubView: React.FC<PracticeHubViewProps> = ({
                 >
                   {activeFlashcard.target}
                 </div>
-                {activeFlashcard.pronunciation && (
-                  <div dir="ltr" className="text-xs font-bold text-indigo-600 dark:text-indigo-300">
-                    [{activeFlashcard.pronunciation}]
-                  </div>
-                )}
+
               </div>
             ) : (
               <div className="py-4 space-y-2 animate-pop">

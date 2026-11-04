@@ -18,6 +18,7 @@ import { COURSE_MAP } from '../data';
 import { t, UI_STRINGS } from '../i18n';
 import { CourseId, Exercise, MascotOutfit, UILang } from '../types';
 import { sound } from '../utils/sound';
+import { simplePronunciationTip } from '../utils/readableTip';
 import { ZikoMascot } from './ZikoMascot';
 import { PronunciationRecorder } from './PronunciationRecorder';
 
@@ -514,11 +515,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                   </button>
                 </div>
               </div>
-              {currentExercise.phoneticHint && (
-                <div dir="ltr" className="text-xs font-bold text-indigo-500 dark:text-indigo-300">
-                  [{currentExercise.phoneticHint}]
-                </div>
-              )}
+
             </div>
           </div>
         )}
@@ -611,9 +608,9 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
             <PronunciationRecorder
               key={currentExercise.id}
               targetSentence={currentExercise.targetText}
-              phonetic={currentExercise.phoneticHint}
               audioText={currentExercise.targetText}
-              audioLang={course.speechRecLang}
+              audioLang={course.ttsLang}
+              speechLang={course.speechRecLang}
               acceptedAnswers={currentExercise.acceptedSpokenVariants}
               uiLang={uiLang}
               disabled={status !== 'answering'}
@@ -873,7 +870,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
                     ? 'الشرح الذكي المجاني (مفتوح 100% فـ DimaLingo):'
                     : 'Free Smart Grammar Explanation:'}
                 </div>
-                {t(currentExercise.grammarTip, uiLang)}
+                {simplePronunciationTip(t(currentExercise.grammarTip, uiLang), uiLang)}
               </div>
             </div>
           )}

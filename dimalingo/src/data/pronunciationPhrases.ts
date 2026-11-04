@@ -30,7 +30,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     target: 'Where do I pick up my checked luggage after customs?',
     phonetic: 'weər duː aɪ pɪk ʌp maɪ tʃekt ˈlʌɡɪdʒ ˈæftər ˈkʌstəmz',
     meaning: { ar: 'من أين أستلم أمتعتي المسجلة بعد الجمارك؟', fr: 'Où puis-je récupérer mes bagages enregistrés après la douane ?', en: 'Where do I pick up my checked luggage after customs?' },
-    tip: { ar: 'لاحظ أن الـ ed فـ "checked" تنطق [t] خفيفة وليست [ɪd]!', fr: 'Le « -ed » de « checked » se prononce [t].', en: 'Final "-ed" after voiceless "k" is pronounced as crisp [t].' },
+    tip: { ar: 'نهاية « checked » كتتنطق بحال حرف ت خفيف، بلا مقطع إضافي.', fr: 'La fin de « checked » se prononce comme un t léger.', en: 'The ending of “checked” sounds like a light t.' },
   },
   {
     id: 'pp_en_4',
@@ -50,7 +50,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     target: 'Let me share my screen and walk you through the main updates',
     phonetic: 'let miː ʃeər maɪ skriːn ænd wɔːk juː θruː ðə meɪn ˈʌpdeɪts',
     meaning: { ar: 'دعني أشارك شاشتي وأشرح لك التحديثات الرئيسية خطوة بخطوة', fr: 'Laissez-moi partager mon écran et présenter les mises à jour', en: 'Let me share my screen and walk you through the main updates' },
-    tip: { ar: 'حرف الـ l فـ "walk" صامت تماماً: تنطق [wɔːk]!', fr: 'Le « l » de « walk » est totalement muet.', en: 'Silent "l" in "walk", followed by voiceless "th" in "through".' },
+    tip: { ar: 'حرف l فـ « walk » صامت؛ استمع للكلمة قبل ما تكررها.', fr: 'Le « l » de « walk » est totalement muet.', en: 'Silent "l" in "walk", followed by voiceless "th" in "through".' },
   },
   {
     id: 'pp_en_6',
@@ -60,7 +60,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     target: 'My greatest strength is staying calm and adaptable under pressure',
     phonetic: 'maɪ ˈɡreɪtɪst streŋθ ɪz ˈsteɪɪŋ kɑːm ænd əˈdæptəbl ˈʌndər ˈpreʃər',
     meaning: { ar: 'أبرز نقطة قوة لدي هي الحفاظ على الهدوء والمرونة تحت الضغط', fr: 'Ma plus grande force est de rester calme et adaptable sous pression', en: 'My greatest strength is staying calm and adaptable under pressure' },
-    tip: { ar: 'كلمة "calm" أيضاً فيها l صامتة: [kɑːm]، و "strength" تنتهي بـ ng+th.', fr: 'Le « l » de « calm » ne se prononce pas.', en: 'Silent "l" in "calm" and cluster "-ngth" in "strength".' },
+    tip: { ar: 'حرف l فـ « calm » صامت، و« strength » كتسالي بصوتي ng وth.', fr: 'Le « l » de « calm » ne se prononce pas.', en: 'Silent "l" in "calm" and cluster "-ngth" in "strength".' },
   },
   {
     id: 'pp_en_7',
@@ -129,7 +129,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     category: 'twisters',
     target: 'She sells seashells by the seashore while rural breezes blow',
     phonetic: 'ʃiː selz ˈsiːʃelz baɪ ðə ˈsiːʃɔːr waɪl ˈrʊərəl ˈbriːzɪz bloʊ',
-    meaning: { ar: 'تمرين النطق الدقيق: التمييز السريع بين S و SH ونطق كلمة Rural الصعبة!', fr: 'Exercice d’articulation alternant [s], [ʃ] et le redoutable « rural »', en: 'Precision drill alternating [s] vs. [ʃ] plus the tricky word "rural"' },
+    meaning: { ar: 'هي تبيع أصداف البحر قرب الشاطئ بينما تهب نسمات الريف.', fr: 'Elle vend des coquillages au bord de la mer tandis que soufflent des brises de campagne.', en: 'She sells shells by the sea while country breezes blow.' },
     tip: { ar: 'إيلا نطقتي هاد الجملة فوق 85%، لسانك ولا خفيف بزاف فـ الإنجليزية!', fr: 'Défi de diction classique des présentateurs anglophones.', en: 'Classic broadcast-anchor diction challenge.' },
   },
 
@@ -141,8 +141,8 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     category: 'daily',
     target: 'Enchanté de faire votre connaissance, d’où venez-vous ?',
     phonetic: 'ɑ̃.ʃɑ̃.te də fɛʁ vɔ.tʁə kɔ.nɛ.sɑ̃s du və.ne vu',
-    meaning: { ar: 'متشرف بالتعرف عليكم، من أين أنتم؟', fr: 'Enchanté de faire votre connaissance, d’où venez-vous ?', en: 'Delighted to meet you, where do you come from?' },
-    tip: { ar: 'انتبه للغنة الأنفية (Voyelles nasales) فـ en-chan-té و con-nais-sance.', fr: 'Soignez les voyelles nasales [ɑ̃] dans « enchanté ».', en: 'Keep the nasal [ɑ̃] resonant without pronouncing a hard "n".' },
+    meaning: { ar: 'تشرفت بمعرفتكم، من أين أنتم؟', fr: 'Ravi de vous rencontrer. D’où êtes-vous originaire ?', en: 'Pleased to meet you. Where are you from?' },
+    tip: { ar: 'سمع مزيان كلمتي « enchanté » و« connaissance »، وعاودهما ببطء.', fr: 'Écoutez bien « enchanté » et « connaissance », puis répétez-les lentement.', en: 'Listen carefully to “enchanté” and “connaissance”, then repeat them slowly.' },
   },
   {
     id: 'pp_fr_2',
@@ -152,7 +152,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     target: 'À quelle heure part le prochain train à destination de Lyon ?',
     phonetic: 'a kɛl œʁ paʁ lə pʁɔ.ʃɛ̃ tʁɛ̃ a dɛs.ti.na.sjɔ̃ də ljɔ̃',
     meaning: { ar: 'في أي ساعة ينطلق القطار القادم المتجه إلى ليون؟', fr: 'À quelle heure part le prochain train à destination de Lyon ?', en: 'What time does the next train to Lyon depart?' },
-    tip: { ar: 'حرف الـ t فآخر « part » صامت تماماً: [paʁ].', fr: 'Le « t » final de « part » est muet.', en: 'Final "t" in "part" is completely silent.' },
+    tip: { ar: 'حرف t فآخر « part » صامت وما كيتنطقش.', fr: 'Le « t » final de « part » est muet.', en: 'Final "t" in "part" is completely silent.' },
   },
   {
     id: 'pp_fr_3',
@@ -172,7 +172,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     target: 'On se retrouve devant la bibliothèque vers dix-huit heures trente ?',
     phonetic: 'ɔ̃ sə ʁə.tʁuv də.vɑ̃ la bi.bli.jɔ.tɛk vɛʁ di.zɥi.t‿œʁ tʁɑ̃t',
     meaning: { ar: 'هل نلتقي أمام المكتبة حوالي السادسة والنصف مساءً؟', fr: 'On se retrouve devant la bibliothèque vers dix-huit heures trente ?', en: 'Shall we meet in front of the library around 6:30 PM?' },
-    tip: { ar: 'لاحظ الربط الصوتي: dix-huit [di.zɥit] ثم t_heures!', fr: 'Double liaison dans « dix-huit heures ».', en: 'Practice smooth liaison in "dix-huit heures".' },
+    tip: { ar: 'لاحظ الربط الصوتي: dix-huit [di.zɥit] ثم t_heures!', fr: 'Liez le son final de « dix-huit » au mot « heures ».', en: 'Practice smooth liaison in "dix-huit heures".' },
   },
   {
     id: 'pp_fr_5',
@@ -222,7 +222,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     target: 'Il ne faut pas vendre la peau de l’ours avant de l’avoir tué',
     phonetic: 'il nə fo pa vɑ̃dʁ la po də luʁs a.vɑ̃ də la.vwaʁ tɥe',
     meaning: { ar: 'لا ينبغي الاحتفال بالنتيجة قبل تحقيقها فعلاً على أرض الواقع', fr: 'Ne célébrons pas une victoire avant qu’elle ne soit acquise', en: 'Do not count your chickens before they hatch' },
-    tip: { ar: 'في كلمة « ours » (دب) ننطق حرف الـ s فالأخير بوضوح: [uʁs]!', fr: 'Le « s » final de « ours » se prononce [uʁs] !', en: 'Pronounce the final "s" in singular "ours" [uʁs]!' },
+    tip: { ar: 'في كلمة « ours »، ننطق حرف s فالأخير.', fr: 'Le « s » final de « ours » se prononce.', en: 'Pronounce the final “s” in the singular word “ours”.' },
   },
   {
     id: 'pp_fr_10',
@@ -241,7 +241,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     category: 'twisters',
     target: 'Un chasseur sachant chasser sait chasser sans son chien',
     phonetic: 'œ̃ ʃa.sœʁ sa.ʃɑ̃ ʃa.se sɛ ʃa.se sɑ̃ sɔ̃ ʃjɛ̃',
-    meaning: { ar: 'تحدي النطق الفرنسي الشهير: التمييز السريع بين [ʃ] (ch) و [s] (s)', fr: 'Le virelangue français par excellence alternant [ʃ] et [s]', en: 'Famous French tongue-twister alternating [ʃ] and [s] + nasal vowels' },
+    meaning: { ar: 'الصياد الذي يعرف الصيد يستطيع أن يصطاد دون كلبه.', fr: 'Un bon chasseur peut chasser même sans son chien.', en: 'A hunter who knows how to hunt can hunt without his dog.' },
     tip: { ar: 'أشهر جملة كيتدربوا بيها المذيعين والممثلين فـ فرنسا لتصفية النطق! 🔥', fr: 'Exercice roi des comédiens et journalistes francophones.', en: 'Gold-standard diction drill for French broadcasters.' },
   },
   {
@@ -274,7 +274,7 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     target: 'Perdone, ¿tiene una mesa libre en la terraza para cuatro personas?',
     phonetic: 'per-do-ne tye-ne u-na me-sa li-bre en la te-rra-sa pa-ra kwa-tro per-so-nas',
     meaning: { ar: 'عذراً، هل لديكم طاولة شاغرة في الشرفة لأربعة أشخاص؟', fr: 'Excusez-moi, avez-vous une table libre en terrasse pour quatre ?', en: 'Excuse me, do you have a free table on the terrace for four people?' },
-    tip: { ar: 'اضغط مزيان على الراء المشددة فـ « terraza » [te-rra-sa]!', fr: 'Roulez bien le double « rr » de « terraza ».', en: 'Trill the double "rr" clearly in "terraza".' },
+    tip: { ar: 'انتبه لنطق الراء المكررة فـ « terraza ».', fr: 'Roulez bien le double « rr » de « terraza ».', en: 'Trill the double "rr" clearly in "terraza".' },
   },
   {
     id: 'pp_es_3',

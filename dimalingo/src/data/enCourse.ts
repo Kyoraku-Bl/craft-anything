@@ -58,7 +58,7 @@ export const enCourse: Course = {
           target: 'My name is Adam and I am from Morocco',
           pronunciation: 'maɪ neɪm ɪz ˈædəm ænd aɪ æm frɒm məˈrɒkoʊ',
           meaning: { ar: 'اسمي آدم وأنا من المغرب', fr: 'Je m’appelle Adam et je viens du Maroc', en: 'My name is Adam and I am from Morocco' },
-          tip: { ar: 'حرف الجر "from" يستعمل دائماً لذكر البلد الأصل.', fr: '« from » indique l’origine géographique.', en: '"from" expresses country or city of origin.' },
+          tip: { ar: 'نستعمل « from » هنا لذكر بلد الأصل.', fr: '« from » indique l’origine géographique.', en: '"from" expresses country or city of origin.' },
         },
         {
           key: 'en_a1_3',

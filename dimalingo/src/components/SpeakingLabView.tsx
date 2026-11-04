@@ -9,7 +9,6 @@ import {
   Shuffle,
   Sparkles,
   Trophy,
-  Volume2,
 } from 'lucide-react';
 import { COURSES } from '../data';
 import { EXTRA_PRONUNCIATION_PHRASES } from '../data/pronunciationPhrases';
@@ -25,6 +24,7 @@ import {
 } from '../types';
 import { PronunciationRecorder } from './PronunciationRecorder';
 import { sound } from '../utils/sound';
+import { simplePronunciationTip } from '../utils/readableTip';
 
 interface SpeakingLabViewProps {
   activeCourse: Course;
@@ -68,6 +68,7 @@ export const SpeakingLabView: React.FC<SpeakingLabViewProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [bestScores, setBestScores] = useState<Record<string, number>>({});
+  const [translationLang, setTranslationLang] = useState<UILang>(uiLang);
 
   // Merge rich extra pronunciation bank + all 72 A1-C2 curriculum expressions!
   const allCoursePhrases = useMemo<PronunciationPhrase[]>(() => {
@@ -180,8 +181,8 @@ export const SpeakingLabView: React.FC<SpeakingLabViewProps> = ({
             </h1>
             <p className="text-sm font-bold opacity-95 mt-1">
               {uiLang === 'ar'
-                ? 'مئات الجمل الواقعية، دليل النطق الصوتي، تحديات مخارج الحروف، وتقييم فوري بالمايكروفون!'
-                : 'Hundreds of real-life sentences, phonetic guides, tongue-twisters & live mic scoring!'}
+                ? 'استمع للجمل والكلمات، شوف الترجمة، وتمرّن على النطق بالمايكروفون.'
+                : uiLang === 'fr' ? 'Écoutez les phrases et les mots, consultez leur traduction et entraînez-vous au micro.' : 'Listen to sentences and words, see translations and practise speaking.'}
             </p>
           </div>
 
@@ -518,45 +519,32 @@ export const SpeakingLabView: React.FC<SpeakingLabViewProps> = ({
                 </div>
               </div>
 
-              {/* Phonetic Pronunciation Helper & Tip */}
-              {(activePhrase.phonetic || activePhrase.tip) && (
-                <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 space-y-1.5">
-                  {activePhrase.phonetic && (
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className="text-xs font-black text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-                        <Volume2 className="w-4 h-4" />
-                        {uiLang === 'ar' ? 'دليل النطق الصوتي:' : 'Phonetic Guide:'}
-                      </span>
-                      <code
-                        dir="ltr"
-                        className="px-2.5 py-0.5 rounded-lg bg-white dark:bg-duo-nightCard text-indigo-900 dark:text-indigo-200 font-bold text-xs"
-                      >
-                        [{activePhrase.phonetic}]
-                      </code>
-                    </div>
-                  )}
-                  {activePhrase.tip && (
-                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300 flex items-start gap-1.5 pt-1">
-                      <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                      <span>{t(activePhrase.tip, uiLang)}</span>
-                    </div>
-                  )}
+              {/* A simple tip replaces technical phonetic notation. */}
+              {activePhrase.tip && (
+                <div className="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/30 border border-indigo-200 dark:border-indigo-900 text-sm font-semibold text-slate-700 dark:text-slate-200 flex items-start gap-2">
+                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                  <span>{simplePronunciationTip(t(activePhrase.tip, uiLang), uiLang)}</span>
                 </div>
               )}
 
-              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-duo-nightSubtle border border-slate-200 dark:border-duo-nightBorder text-xs font-bold text-slate-600 dark:text-slate-300">
-                <span className="font-black text-slate-800 dark:text-slate-100">
-                  {uiLang === 'ar' ? 'المعنى:' : 'Meaning:'}{' '}
-                </span>
-                {t(activePhrase.meaning, uiLang)}
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-duo-nightSubtle border border-slate-200 dark:border-duo-nightBorder text-sm font-bold text-slate-700 dark:text-slate-200 space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="font-black">{uiLang === 'ar' ? 'الترجمة:' : uiLang === 'fr' ? 'Traduction :' : 'Translation:'}</span>
+                  <div className="flex flex-wrap gap-1" role="group" aria-label={uiLang === 'ar' ? 'لغة الترجمة' : uiLang === 'fr' ? 'Langue de traduction' : 'Translation language'}>
+                    {([['ar', 'العربية'], ['fr', 'Français'], ['en', 'English']] as const).map(([lang, label]) => (
+                      <button key={lang} type="button" aria-pressed={translationLang === lang} onClick={() => setTranslationLang(lang)} className={`px-2.5 py-1 rounded-lg text-xs font-black border ${translationLang === lang ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white dark:bg-duo-nightCard border-slate-300 dark:border-duo-nightBorder text-slate-700 dark:text-slate-200'}`}>{label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div dir="auto" lang={translationLang}>{t(activePhrase.meaning, translationLang)}</div>
               </div>
 
               <PronunciationRecorder
                 key={`${activeCourse.id}_${activePhrase.id}`}
                 targetSentence={activePhrase.target}
-                phonetic={activePhrase.phonetic}
                 audioText={activePhrase.target}
-                audioLang={activeCourse.speechRecLang}
+                audioLang={activeCourse.ttsLang}
+                speechLang={activeCourse.speechRecLang}
                 acceptedAnswers={activePhrase.altTargets}
                 uiLang={uiLang}
                 onEvaluated={(_transcript, evaluation) => {

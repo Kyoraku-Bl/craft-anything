@@ -44,9 +44,9 @@ interface SpeechRecognitionLike {
 
 interface PronunciationRecorderProps {
   targetSentence: string;
-  phonetic?: string;
   audioText: string;
   audioLang: string;
+  speechLang?: string;
   acceptedAnswers?: string[];
   uiLang: UILang;
   disabled?: boolean;
@@ -56,9 +56,9 @@ interface PronunciationRecorderProps {
 
 export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   targetSentence,
-  phonetic,
   audioText,
   audioLang,
+  speechLang,
   acceptedAnswers = [],
   uiLang,
   disabled = false,
@@ -120,7 +120,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
       if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
       audioUrlRef.current = null;
     };
-  }, [targetSentence, audioLang]);
+  }, [targetSentence, audioLang, speechLang]);
 
   const finalizeEvaluation = (finalText: string) => {
     const clean = finalText.trim();
@@ -235,7 +235,8 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
       recRef.current = rec;
       const ua = navigator.userAgent;
       const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      rec.lang = isIOS && audioLang === 'ar-MA' ? 'ar-SA' : audioLang;
+      const recognitionLang = speechLang || audioLang;
+      rec.lang = isIOS && recognitionLang === 'ar-MA' ? 'ar-SA' : recognitionLang;
       rec.interimResults = true;
       rec.continuous = false;
       rec.maxAlternatives = 1;
@@ -296,10 +297,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
           <span className="text-xs font-black uppercase tracking-wider text-duo-blue">
             🎙️{' '}
             {uiLang === 'ar'
-              ? 'اسمع النطق الأصلي ثم عاود انطق كل كلمة:'
+              ? 'اسمع الجملة وعاود انطق كل كلمة:'
               : uiLang === 'fr'
               ? 'Écoutez le modèle puis répétez chaque mot :'
-              : 'Listen to native model & speak each word:'}
+              : 'Listen to the sentence and repeat each word:'}
           </span>
 
           <div className="flex items-center gap-2">
@@ -357,11 +358,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
               ))}
         </div>
 
-        {phonetic && (
-          <div className="text-center text-xs sm:text-sm font-bold text-slate-500 dark:text-slate-400">
-            🗣️ {phonetic}
-          </div>
-        )}
+
       </div>
 
       {/* Live Microphone Waveform & Capture Controls */}

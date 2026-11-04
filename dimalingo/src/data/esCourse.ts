@@ -67,14 +67,14 @@ export const esCourse: Course = {
           target: 'Disculpe, ¿dónde está la estación de metro?',
           pronunciation: 'dis-kul-pe don-de es-ta la es-ta-syon de me-tro',
           meaning: { ar: 'عذراً، أين توجد محطة المترو؟', fr: 'Excusez-moi, où se trouve la station de métro ?', en: 'Excuse me, where is the subway station?' },
-          tip: { ar: 'نستعمل دائماً « está » لتحديد مكان البنايات والشوارع!', fr: 'La localisation utilise toujours « estar ».', en: 'Locations always take "estar" in Spanish.' },
+          tip: { ar: 'نستعمل « está » هنا لتحديد مكان مبنى.', fr: 'Ici, « estar » sert à situer un bâtiment.', en: 'Here, “estar” locates a building.' },
         },
         {
           key: 'es_a1_5',
           target: '¿Puede hablar un poco más despacio, por favor?',
           pronunciation: 'pwe-de a-blar un po-ko mas des-pa-syo por fa-vor',
           meaning: { ar: 'هل يمكنك التحدث ببطء أكثر قليلاً من فضلك؟', fr: 'Pouvez-vous parler un peu plus lentement, s’il vous plaît ?', en: 'Could you speak a bit more slowly, please?' },
-          tip: { ar: 'حرف « h » فـ « hablar » صامت دائماً ولا ينطق أبداً!', fr: 'Le « h » est toujours muet en espagnol.', en: 'The letter "h" is always silent in Spanish.' },
+          tip: { ar: 'حرف « h » في كلمة « hablar » صامت.', fr: 'Le « h » de « hablar » est muet.', en: 'The “h” in “hablar” is silent.' },
         },
         {
           key: 'es_a1_6',
@@ -262,7 +262,7 @@ export const esCourse: Course = {
           target: 'Espero que tengas mucho éxito en tu nuevo proyecto',
           pronunciation: 'es-pe-ro ke ten-gas mu-cho ek-si-to en tu nwe-vo pro-yek-to',
           meaning: { ar: 'أتمنى أن تحقق نجاحاً كبيراً في مشروعك الجديد', fr: 'J’espère que tu auras beaucoup de succès dans ton nouveau projet', en: 'I hope you have great success in your new project' },
-          tip: { ar: '« esperar que » تستلزم دائماً صيغة الـ Subjuntivo (tengas).', fr: 'Contrairement au français, « esperar que » exige le subjonctif.', en: '"esperar que" always triggers the Spanish subjunctive.' },
+          tip: { ar: 'في التعبير عن الأمل هنا، يأتي بعد « esperar que » فعل بصيغة الـ Subjuntivo.', fr: 'Pour exprimer un souhait ici, « esperar que » est suivi du subjonctif.', en: 'When expressing a hope here, “esperar que” takes the subjunctive.' },
         },
         {
           key: 'es_b1_2',

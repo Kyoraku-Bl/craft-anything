@@ -542,11 +542,6 @@ export const LearningPathView: React.FC<LearningPathViewProps> = ({
                       <div className="font-black text-slate-800 dark:text-slate-100 text-base">
                         {phrase.target}
                       </div>
-                      {phrase.pronunciation && (
-                        <div dir="ltr" className="text-[11px] font-bold text-indigo-500 dark:text-indigo-300">
-                          [{phrase.pronunciation}]
-                        </div>
-                      )}
                       <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
                         {t(phrase.meaning, uiLang)}
                       </div>

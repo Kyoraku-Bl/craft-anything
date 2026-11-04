@@ -31,3 +31,23 @@ for (const unit of COURSE_MAP.fusha.units) {
 }
 assert.equal(normalizeAnswer('الْعِلْمُ'), normalizeAnswer('العلم'));
 console.log('Fusha curriculum, exercise options, translations and pronunciation normalization: OK');
+
+for (const course of COURSES) {
+  assert.equal(course.units.length, 6, course.id);
+  for (const unit of course.units) {
+    assert.equal(unit.guidePhrases.length, 12, unit.id);
+    for (const phrase of unit.guidePhrases) {
+      assert(phrase.target.trim(), unit.id);
+      for (const lang of ['ar', 'fr', 'en'] as const) assert(phrase.meaning[lang].trim(), `${unit.id} ${lang}`);
+    }
+    for (const exercise of unit.nodes.flatMap(n => n.exercises)) {
+      for (const lang of ['ar', 'fr', 'en'] as const) assert(exercise.prompt[lang]?.trim() && exercise.grammarTip[lang]?.trim(), `${exercise.id} ${lang}`);
+      if (exercise.options && exercise.correctAnswer) assert(exercise.options.some(o => o.id === exercise.correctAnswer), exercise.id);
+    }
+  }
+}
+const frenchIntro = EXTRA_PRONUNCIATION_PHRASES.find(p => p.id === 'pp_fr_1')!;
+assert.equal(frenchIntro.target, 'Enchanté de faire votre connaissance, d’où venez-vous ?');
+assert.match(frenchIntro.meaning.ar, /تشرفت بمعرفتكم/);
+assert(!frenchIntro.tip?.fr.includes('['));
+console.log('All five course structures, translations, answer options and French example: OK');
