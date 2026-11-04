@@ -128,6 +128,65 @@ await act(async () => renderIOS('Merci'));
 assert.equal((document.querySelector('textarea') as HTMLTextAreaElement).value, '', 'dictation text must reset for a new phrase');
 await act(async () => root4.unmount());
 
+// Local microphone flow in an iPhone Home Screen WebClip. Model and browser
+// APIs are mocked: these tests do not establish real-device model performance.
+class FakeRecorder {
+  static last: FakeRecorder;
+  state = 'inactive'; mimeType = 'audio/mp4';
+  ondataavailable: ((event: any) => void) | null = null;
+  onstop: (() => void) | null = null;
+  onerror: (() => void) | null = null;
+  constructor(_stream: any) { FakeRecorder.last = this; }
+  start() { this.state = 'recording'; }
+  stop() { this.state = 'inactive'; this.ondataavailable?.({ data: new Blob(['audio']) }); this.onstop?.(); }
+}
+class FakeWorker {
+  static last: FakeWorker;
+  onmessage: ((event: any) => void) | null = null; onerror: (() => void) | null = null;
+  posted: any; terminated = false;
+  constructor() { FakeWorker.last = this; }
+  postMessage(message: any) { this.posted = message; }
+  terminate() { this.terminated = true; }
+}
+(globalThis as any).Worker = FakeWorker;
+(globalThis as any).MediaRecorder = FakeRecorder;
+(globalThis as any).AudioContext = class {
+  async decodeAudioData() { return { sampleRate: 16000, getChannelData: () => new Float32Array(8000).fill(0.1) }; }
+  async close() {}
+};
+let stoppedTracks = 0;
+Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: async () => ({getTracks: () => [{stop: () => stoppedTracks++}]}) } });
+const localRoot = createRoot(document.getElementById('root')!);
+const recognized: string[] = [];
+const localRender = (target: string) => localRoot.render(<PronunciationRecorder targetSentence={target} audioText={target} audioLang="fr-FR" uiLang="en" onEvaluated={text => recognized.push(text)} />);
+await act(async () => localRender('Bonjour'));
+await act(async () => click('Speak into mic'));
+assert(document.body.textContent?.includes('Recording: speak clearly'));
+assert.equal(FakeRecognition.instances.length, beforeInstances, 'WebClip should use local recording, not SpeechRecognition');
+await act(async () => click('Stop and transcribe'));
+assert.equal(stoppedTracks, 1);
+assert.equal(FakeWorker.last.posted.language, 'fr');
+assert.equal(FakeWorker.last.posted.audio.length, 8000);
+await act(async () => FakeWorker.last.onmessage?.({data:{status:'transcribing'}}));
+assert(document.body.textContent?.includes('Transcribing on your device'));
+await act(async () => FakeWorker.last.onmessage?.({data:{status:'done', text:'Bonjour'}}));
+assert.deepEqual(recognized, ['Bonjour']);
+assert(document.body.textContent?.includes('Recognized text match: 100%'));
+assert(FakeWorker.last.terminated);
+await act(async () => click('Speak into mic'));
+await act(async () => click('Stop and transcribe'));
+const oldWorker = FakeWorker.last;
+await act(async () => localRender('Merci'));
+assert(oldWorker.terminated);
+await act(async () => oldWorker.onmessage?.({data:{status:'done',text:'Bonjour'}}));
+assert.deepEqual(recognized, ['Bonjour'], 'stale local results must not be scored');
+await act(async () => click('Speak into mic'));
+await act(async () => click('Stop and transcribe'));
+await act(async () => FakeWorker.last.onmessage?.({data:{status:'error'}}));
+assert(document.body.textContent?.includes('Could not download or run local recognition'));
+assert.equal(recognized.length, 1);
+await act(async () => localRoot.unmount());
+
 // On an iPhone Safari tab, direct speech remains the default; a service failure
 // offers keyboard dictation instead of treating it solely as microphone denial.
 Object.defineProperty(navigator, 'standalone', { configurable: true, value: false });

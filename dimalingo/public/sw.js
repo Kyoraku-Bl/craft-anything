@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dimalingo-v2';
+const CACHE_NAME = 'dimalingo-v3';
 const ASSETS = [
   '/',
   '/index.html',
@@ -22,7 +22,7 @@ self.addEventListener('activate', (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
+        Promise.all(keys.filter((k) => k.startsWith('dimalingo-') && k !== CACHE_NAME).map((k) => caches.delete(k)))
       )
       .then(() => self.clients.claim())
   );
@@ -31,6 +31,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+  // Transformers.js manages its own model cache. Never intercept or duplicate
+  // cross-origin model downloads, or return the app shell for failed assets.
+  if (url.origin !== self.location.origin || url.pathname.endsWith('.wasm')) return;
   if (
     url.pathname.endsWith('.apk') ||
     url.pathname.endsWith('.mobileconfig')
@@ -50,7 +53,7 @@ self.addEventListener('fetch', (event) => {
       .catch(() =>
         caches
           .match(event.request)
-          .then((cached) => cached || caches.match('/index.html'))
+          .then((cached) => cached || (event.request.mode === 'navigate' ? caches.match('/index.html') : Response.error()))
       )
   );
 });

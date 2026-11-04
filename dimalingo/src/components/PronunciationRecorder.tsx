@@ -75,7 +75,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   onEvaluated,
   onSkipMic,
 }) => {
-  type Phase = 'idle' | 'starting' | 'listening' | 'stopping' | 'recording';
+  type Phase = 'idle' | 'starting' | 'listening' | 'stopping' | 'recording' | 'local-recording' | 'local-processing';
   const [phase, setPhase] = useState<Phase>('idle');
   const [liveTranscript, setLiveTranscript] = useState('');
   const [evaluation, setEvaluation] = useState<PronunciationEvaluation | null>(null);
@@ -88,6 +88,8 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   const iosHomeScreen = isIOSHomeScreen();
   const showDictation = iosHomeScreen || dictationAvailable;
   const recRef = useRef<SpeechRecognitionLike | null>(null);
+  const localWorkerRef = useRef<Worker | null>(null);
+  const [localStatus, setLocalStatus] = useState('');
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioUrlRef = useRef<string | null>(null);
@@ -121,6 +123,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     latestTranscriptRef.current = '';
     return () => {
       clearWatchdog();
+      localWorkerRef.current?.terminate(); localWorkerRef.current = null;
       sessionRef.current++;
       busyRef.current = false;
       const rec = recRef.current;
@@ -169,10 +172,108 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     }
   };
 
+  // Home Screen WebClips may not expose Web Speech; record locally and use a
+  // separate on-device model instead. A new worker per attempt permits cancellation.
+  const startLocalMic = async () => {
+    if (disabled || busyRef.current) return;
+    const session = ++sessionRef.current;
+    busyRef.current = true;
+    setPhase('starting'); setMicWarning(null); setLiveTranscript(''); setEvaluation(null);
+    setEvaluationSource('speech'); clearRecording();
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined' || typeof Worker === 'undefined') {
+      busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
+      setMicWarning(message('هاد الجهاز ما كيدعمش التسجيل المحلي. استعمل إملاء لوحة المفاتيح.', 'Cet appareil ne prend pas en charge l’enregistrement local. Utilisez la dictée du clavier.', 'Local recording is not supported on this device. Use keyboard dictation.'));
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (session !== sessionRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
+      mediaStreamRef.current = stream;
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      const chunks: BlobPart[] = [];
+      recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+      recorder.onerror = () => {
+        if (session !== sessionRef.current) return;
+        clearWatchdog(); sessionRef.current++; releaseStream(); mediaRecorderRef.current = null;
+        busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage('audio-capture'));
+      };
+      recorder.onstop = async () => {
+        if (session !== sessionRef.current) return;
+        clearWatchdog(); releaseStream(); mediaRecorderRef.current = null;
+        setPhase('local-processing');
+        setLocalStatus(message('كنوجد الصوت…', 'Préparation de l’audio…', 'Preparing audio…'));
+        try {
+          if (!chunks.length) throw new Error('empty');
+          const blob = new Blob(chunks, { type: recorder.mimeType });
+          const context = new AudioContext();
+          let buffer: AudioBuffer;
+          try { buffer = await context.decodeAudioData(await blob.arrayBuffer()); }
+          finally { await context.close(); }
+          if (session !== sessionRef.current) return;
+          const source = buffer.getChannelData(0);
+          // Whisper expects mono PCM at 16 kHz. Linear interpolation is sufficient
+          // for the short speech exercises and avoids a second recording stream.
+          const samples = new Float32Array(Math.floor(source.length * 16000 / buffer.sampleRate));
+          let peak = 0;
+          for (let i = 0; i < samples.length; i++) {
+            const position = i * buffer.sampleRate / 16000;
+            const left = Math.floor(position), mix = position - left;
+            samples[i] = source[left] * (1 - mix) + (source[Math.min(left + 1, source.length - 1)] || 0) * mix;
+            peak = Math.max(peak, Math.abs(samples[i]));
+          }
+          if (samples.length < 4000 || peak < 0.002) throw new Error('silent');
+          const worker = new Worker(new URL('../workers/localSpeech.ts', import.meta.url), { type: 'module' });
+          localWorkerRef.current = worker;
+          const fail = () => {
+            if (session !== sessionRef.current) return;
+            clearWatchdog(); worker.terminate(); localWorkerRef.current = null;
+            busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
+            setMicWarning(message('ما قدرناش نحمّلو أو نشغّلو التعرف المحلي. تأكد من الإنترنت والمساحة، وعاود المحاولة أو استعمل إملاء لوحة المفاتيح.', 'Impossible de télécharger ou lancer la reconnaissance locale. Vérifiez la connexion et l’espace, réessayez ou utilisez la dictée du clavier.', 'Could not download or run local recognition. Check your connection and storage, retry, or use keyboard dictation.'));
+          };
+          worker.onerror = fail;
+          worker.onmessage = event => {
+            if (session !== sessionRef.current) return;
+            const data = event.data;
+            if (data.status === 'loading' || data.status === 'progress') setLocalStatus(message('كنحمّلو نموذج الصوت لأول مرة…', 'Téléchargement du modèle vocal…', 'Downloading the speech model…'));
+            else if (data.status === 'transcribing') setLocalStatus(message('كنحوّلو الصوت لنص على الجهاز…', 'Transcription sur l’appareil…', 'Transcribing on your device…'));
+            else if (data.status === 'error') fail();
+            else if (data.status === 'done') {
+              clearWatchdog(); worker.terminate(); localWorkerRef.current = null;
+              busyRef.current = false; setPhase('idle');
+              const text = typeof data.text === 'string' ? data.text.trim() : '';
+              if (!text) setMicWarning(errorMessage('no-speech'));
+              else { setLiveTranscript(text); finalizeEvaluation(text); }
+            }
+          };
+          timeoutRef.current = setTimeout(fail, 240000);
+          const lang = (speechLang || audioLang).split('-')[0].toLowerCase();
+          worker.postMessage({ audio: samples, language: ['ar', 'fr', 'en', 'es'].includes(lang) ? lang : 'ar' }, [samples.buffer]);
+        } catch (error) {
+          if (session !== sessionRef.current) return;
+          busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
+          setMicWarning(error instanceof Error && error.message === 'silent' ? errorMessage('no-speech') : message('ما قدرناش نقراو التسجيل. عاود المحاولة أو استعمل إملاء لوحة المفاتيح.', 'Impossible de lire l’enregistrement. Réessayez ou utilisez la dictée du clavier.', 'Could not decode the recording. Retry or use keyboard dictation.'));
+        }
+      };
+      recorder.start(); setPhase('local-recording');
+      timeoutRef.current = setTimeout(() => { if (session === sessionRef.current && recorder.state !== 'inactive') recorder.stop(); }, 15000);
+    } catch (error) {
+      if (session !== sessionRef.current) return;
+      releaseStream(); mediaRecorderRef.current = null; busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
+      setMicWarning(error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'SecurityError') ? message('ما عندناش إذن المايكروفون. سمح ليه من إعدادات iPhone وعاود المحاولة.', 'Accès au micro refusé. Autorisez-le dans les réglages de l’iPhone et réessayez.', 'Microphone access was denied. Allow it in iPhone settings and try again.') : errorMessage('audio-capture'));
+    }
+  };
+
   const handleToggleMic = () => {
     if (disabled) return;
     if (busyRef.current) {
-      if (recRef.current && phase !== 'stopping') {
+      if (phase === 'local-processing') {
+        sessionRef.current++; clearWatchdog(); localWorkerRef.current?.terminate(); localWorkerRef.current = null; busyRef.current = false; setPhase('idle');
+      } else if (phase === 'local-recording' && mediaRecorderRef.current) {
+        setPhase('local-processing'); clearWatchdog();
+        try { mediaRecorderRef.current.stop(); } catch { releaseStream(); busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage('audio-capture')); }
+      } else if (recRef.current && phase !== 'stopping') {
         // Results can arrive after stop(); only onend may score them.
         setPhase('stopping');
         const rec = recRef.current;
@@ -196,6 +297,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
       return;
     }
 
+    if (iosHomeScreen) { void startLocalMic(); return; }
     const session = ++sessionRef.current;
     busyRef.current = true;
     setPhase('starting');
@@ -400,9 +502,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
 
       {/* iOS Home Screen Web Apps may expose SpeechRecognition but reject it.
           Keyboard dictation is an explicit text-comparison alternative. */}
+      {iosHomeScreen && <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{message('المايك كيخدم بنموذج مجاني على الجهاز. أول استعمال كيتحمّل تقريباً 55 ميغا أو أكثر بالإنترنت؛ ممكن ياخذ وقت، والتخزين المؤقت ماشي مضمون. الصوت ما كيتصيفطش للسيرفر، والنتيجة مقارنة النص فقط، ماشي تقييم دقة النطق. الدارجة ممكن ما تتعرفش مزيان.', 'Le micro utilise un modèle gratuit sur l’appareil. Au premier usage, environ 55 Mo ou plus sont téléchargés ; cela peut prendre du temps et le cache n’est pas garanti. L’audio n’est pas envoyé au serveur. Le score compare le texte, pas la prononciation ; la darija peut être mal reconnue.', 'The microphone uses a free on-device model. First use downloads around 55 MB or more and may take time; caching is not guaranteed. Audio is not sent to a server. The score compares text, not pronunciation; Darija may be inaccurate.')}</p>}
       {showDictation && (
-        <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border-2 border-sky-200 dark:border-sky-800 space-y-3">
-          <h3 className="font-black text-sky-900 dark:text-sky-100">🎙️ {message('الإملاء بلوحة مفاتيح الآيفون', 'Dictée avec le clavier iPhone', 'Dictation with the iPhone keyboard')}</h3>
+        <details className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border-2 border-sky-200 dark:border-sky-800 space-y-3">
+          <summary className="font-black text-sky-900 dark:text-sky-100 cursor-pointer">🎙️ {message('الإملاء بلوحة مفاتيح الآيفون', 'Dictée avec le clavier iPhone', 'Dictation with the iPhone keyboard')}</summary>
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{message('1. اضغط على الخانة. 2. اختار لغة الجملة من لوحة المفاتيح واضغط على المايك ديالها 🎙️. 3. قول الجملة، وقف الإملاء، ثم اضغط «تحقق من النص».', '1. Touchez le champ. 2. Choisissez la langue de la phrase sur le clavier et touchez son micro 🎙️. 3. Dictez, arrêtez la dictée, puis touchez « Vérifier le texte ».', '1. Tap the text box. 2. Select the sentence language on the keyboard and tap its microphone 🎙️. 3. Speak, stop dictation, then tap “Check text”.')}</p>
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{message('إلا ما بانش المايك فاللوحة، فعّل الإملاء من إعدادات iPhone ← عام ← لوحة المفاتيح. هاد الطريقة كتقارن النص فقط، ما كتقيّمش النطق مباشرة.', 'Si le micro du clavier est absent, activez Dictée dans Réglages iPhone → Général → Clavier. Cette méthode compare uniquement le texte, pas la prononciation.', 'If the keyboard microphone is missing, enable Dictation in iPhone Settings → General → Keyboard. This compares text only; it does not measure pronunciation.')}</p>
           <label htmlFor="ios-dictation-text" className="block text-sm font-black text-slate-800 dark:text-slate-100">{message('النص من الإملاء أو الكتابة:', 'Texte dicté ou saisi :', 'Dictated or typed text:')}</label>
@@ -411,14 +514,14 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             <button type="button" disabled={disabled || isRecording} onClick={() => dictationRef.current?.focus()} className="px-4 py-2.5 rounded-xl bg-duo-blue border-b-4 border-duo-blueDark text-white font-black text-sm">{message('فتح لوحة المفاتيح', 'Ouvrir le clavier', 'Open keyboard')}</button>
             <button type="button" disabled={disabled || isRecording || !dictationText.trim()} onClick={checkDictation} className="px-4 py-2.5 rounded-xl bg-duo-green border-b-4 border-duo-greenDark text-white font-black text-sm disabled:opacity-50">{message('تحقق من النص', 'Vérifier le texte', 'Check text')}</button>
           </div>
-        </div>
+        </details>
       )}
 
       {/* Direct recognition when supported. */}
       <div className="flex flex-col items-center gap-3">
         {isRecording && (
           <p role="status" aria-live="polite" className="text-sm font-bold text-rose-700 dark:text-rose-300 text-center">
-            {phase === 'starting' ? message('كنطلب إذن المايكروفون…', 'Demande d’accès au microphone…', 'Requesting microphone access…') : phase === 'stopping' ? message('كنحلّل الكلام…', 'Analyse en cours…', 'Processing speech…') : phase === 'recording' ? message('كنسجّل الصوت للاستماع فقط.', 'Enregistrement pour écoute uniquement.', 'Recording for playback only.') : message('كنسمع ليك، هضر دابا بوضوح.', 'Je vous écoute, parlez clairement.', 'Listening — speak clearly now.')}
+            {phase === 'local-processing' ? localStatus : phase === 'local-recording' ? message('كنسجّل دابا، هضر بوضوح ثم وقف. الحد الأقصى 15 ثانية.', 'Enregistrement : parlez clairement puis arrêtez. Maximum 15 secondes.', 'Recording: speak clearly, then stop. Maximum 15 seconds.') : phase === 'starting' ? message('كنطلب إذن المايكروفون…', 'Demande d’accès au microphone…', 'Requesting microphone access…') : phase === 'stopping' ? message('كنحلّل الكلام…', 'Analyse en cours…', 'Processing speech…') : phase === 'recording' ? message('كنسجّل الصوت للاستماع فقط.', 'Enregistrement pour écoute uniquement.', 'Recording for playback only.') : message('كنسمع ليك، هضر دابا بوضوح.', 'Je vous écoute, parlez clairement.', 'Listening — speak clearly now.')}
           </p>
         )}
 
@@ -436,7 +539,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             {isRecording ? (
               <>
                 <Square className="w-5 h-5 fill-current" />
-                {uiLang === 'ar'
+                {phase === 'local-processing' ? message('إلغاء', 'Annuler', 'Cancel') : phase === 'local-recording' ? message('وقف وحلّل', 'Arrêter et transcrire', 'Stop and transcribe') : uiLang === 'ar'
                   ? (phase === 'recording' ? 'إيقاف التسجيل' : 'إيقاف وتحليل النطق')
                   : uiLang === 'fr'
                   ? (phase === 'recording' ? 'Arrêter l’enregistrement' : 'Arrêter & analyser')
@@ -445,7 +548,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             ) : (
               <>
                 <Mic className="w-6 h-6" />
-                {iosHomeScreen ? message('جرّب المايك المباشر (قد لا يتوفر)', 'Essayer le micro direct (parfois indisponible)', 'Try direct microphone (may be unavailable)') : t(UI_STRINGS.tapToSpeak, uiLang)}
+                {iosHomeScreen ? message('هضر بالمايك ووافق على تحميل النموذج', 'Parler au micro et accepter le téléchargement', 'Speak into mic and allow model download') : t(UI_STRINGS.tapToSpeak, uiLang)}
               </>
             )}
           </button>
