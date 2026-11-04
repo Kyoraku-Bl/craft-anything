@@ -1,7 +1,7 @@
 // Whisper runs locally. Only model files are downloaded; audio is not uploaded.
 import { env, pipeline } from '@huggingface/transformers';
-import wasmURL from '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.wasm?url';
-import mjsURL from '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.mjs?url';
+import wasmURL from '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm?url';
+import mjsURL from '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.mjs?url';
 
 env.allowLocalModels = false;
 env.backends.onnx.wasm!.numThreads = 1;

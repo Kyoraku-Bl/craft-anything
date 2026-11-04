@@ -50,20 +50,14 @@ assert.deepEqual(evaluated, ['Hello world']);
 await act(async () => first.onend?.());
 assert.equal(evaluated.length, 1, 'results must not be scored twice');
 
+// Keep the browser path for non-service failures and reject stale callbacks.
 await act(async () => click('Tap and speak'));
-const denied = FakeRecognition.instances[1];
-await act(async () => denied.onerror?.({ error: 'not-allowed' }));
-assert(document.body.textContent?.includes('Direct speech recognition was denied'));
-assert(document.body.textContent?.includes('Try local microphone and allow model download'));
-assert(denied.aborted);
-await act(async () => click('Tap and speak'));
-const silent = FakeRecognition.instances[2];
+const silent = FakeRecognition.instances[1];
 await act(async () => { silent.onstart?.(); silent.onend?.(); });
 assert(document.body.textContent?.includes('No speech was detected'));
 assert.equal(evaluated.length, 1);
-
 await act(async () => click('Tap and speak'));
-const stale = FakeRecognition.instances[3];
+const stale = FakeRecognition.instances[2];
 const staleEnd = stale.onend;
 await act(async () => render('New sentence'));
 assert(stale.aborted);
@@ -71,21 +65,38 @@ await act(async () => staleEnd?.());
 assert.equal(evaluated.length, 1, 'old sessions must not score a new phrase');
 assert(!document.body.textContent?.includes('No speech was detected'));
 
-// An unsupported browser must not pretend it heard speech or score a denial.
-delete (window as any).SpeechRecognition;
-(globalThis as any).MediaRecorder = class {};
+// The screenshot's network failure moves the MAIN button to local mode; the
+// model download still requires the user's next, explicitly labelled tap.
 await act(async () => click('Tap and speak'));
-assert.equal(captureCalls, 1);
-assert(document.body.textContent?.includes('Speech recognition is unavailable'));
-assert.equal(evaluated.length, 1);
+const failed = FakeRecognition.instances[3];
+const recognizerCount = FakeRecognition.instances.length;
+await act(async () => failed.onerror?.({error:'network'}));
+assert(failed.aborted);
+assert(document.body.textContent?.includes('browser speech service could not connect'));
+assert(document.body.textContent?.includes('Speak into mic and allow model download'));
+assert.equal(FakeRecognition.instances.length, recognizerCount);
+assert.equal(captureCalls, 0, 'the fallback must not capture or download without another tap');
+await act(async () => render('Another sentence'));
+assert(document.body.textContent?.includes('Speak into mic and allow model download'), 'fallback remains selected across phrase changes');
 
+// Late local-microphone grants must be released on unmount.
 let resolveStream: (value: any) => void = () => {};
 let stopped = false;
+(globalThis as any).Worker = class {};
+(globalThis as any).MediaRecorder = class {};
 Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: () => new Promise(resolve => { resolveStream = resolve; }) } });
-await act(async () => click('Tap and speak'));
+await act(async () => click('Speak into mic'));
+assert.equal(FakeRecognition.instances.length, recognizerCount, 'must not restart broken browser recognition');
 await act(async () => root.unmount());
 await act(async () => resolveStream({ getTracks: () => [{ stop: () => { stopped = true; } }] }));
 assert(stopped, 'a late microphone grant must be released after unmount');
+
+// Preference survives recorder remounts (each phrase uses a different key).
+const persistedRoot = createRoot(document.getElementById('root')!);
+await act(async () => persistedRoot.render(<PronunciationRecorder targetSentence="Hi" audioText="Hi" audioLang="en-US" uiLang="en" onEvaluated={() => {}} />));
+assert(document.body.textContent?.includes('Speak into mic and allow model download'));
+await act(async () => persistedRoot.unmount());
+window.sessionStorage.clear();
 const root2 = createRoot(document.getElementById('root')!);
 await act(async () => root2.render(<SpeakingLabView activeCourse={COURSE_MAP.fr} uiLang="fr" onSelectCourse={() => {}} onStartSpeakingWorkout={() => {}} />));
 assert(document.body.textContent?.includes('Enchanté'));
@@ -202,20 +213,27 @@ assert.equal(FakeRecorder.last.state, 'inactive');
 window.history.replaceState({}, '', '/');
 Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit' });
 
-// On an iPhone Safari tab, direct speech remains the default; a service failure
-// offers keyboard dictation instead of treating it solely as microphone denial.
+// iPhone Safari itself also defaults to the local mic, not Web Speech.
 Object.defineProperty(navigator, 'standalone', { configurable: true, value: false });
+window.sessionStorage.clear();
 const root5 = createRoot(document.getElementById('root')!);
 await act(async () => root5.render(<PronunciationRecorder targetSentence="Bonjour" audioText="Bonjour" audioLang="fr-FR" uiLang="fr" onEvaluated={() => {}} />));
-assert(!document.querySelector('textarea'));
-await act(async () => click('Appuyez et parlez'));
-const iosRecognizer = FakeRecognition.instances.at(-1)!;
-await act(async () => iosRecognizer.onerror?.({error:'service-not-allowed'}));
-assert(document.body.textContent?.includes('Dictée avec le clavier iPhone'));
-assert(document.body.textContent?.includes('reconnaissance directe'));
-assert(document.body.textContent?.includes('Essayer le micro local'));
-await act(async () => click('Essayer le micro local'));
+const iosCount = FakeRecognition.instances.length;
+assert(document.body.textContent?.includes('Parler au micro et accepter le téléchargement'));
+await act(async () => click('Parler au micro et accepter le téléchargement'));
 assert(document.body.textContent?.includes('Enregistrement : parlez clairement'));
+assert.equal(FakeRecognition.instances.length, iosCount);
 await act(async () => root5.unmount());
+
+// No Web Speech on a non-iPhone: offer the local path, not a fake score.
+Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0' });
+window.sessionStorage.clear();
+delete (window as any).SpeechRecognition;
+const noSpeechRoot = createRoot(document.getElementById('root')!);
+await act(async () => noSpeechRoot.render(<PronunciationRecorder targetSentence="Hello" audioText="Hello" audioLang="en-US" uiLang="en" onEvaluated={() => { throw Error('must not score'); }} />));
+await act(async () => click('Tap and speak'));
+assert(document.body.textContent?.includes('Browser speech recognition is unavailable'));
+assert(document.body.textContent?.includes('Speak into mic and allow model download'));
+await act(async () => noSpeechRoot.unmount());
 dom.window.close();
 console.log('Microphone recognition, stop, errors, retry, stale callbacks and unsupported-browser denial: OK');
