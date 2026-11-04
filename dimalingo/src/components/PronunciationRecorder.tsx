@@ -54,6 +54,16 @@ interface PronunciationRecorderProps {
   onSkipMic?: () => void;
 }
 
+function isIOSDevice(): boolean {
+  return typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1));
+}
+
+function isIOSHomeScreen(): boolean {
+  if (!isIOSDevice() || typeof window === 'undefined') return false;
+  return (navigator as Navigator & { standalone?: boolean }).standalone === true ||
+    (typeof window.matchMedia === 'function' && window.matchMedia('(display-mode: standalone)').matches);
+}
+
 export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   targetSentence,
   audioText,
@@ -71,6 +81,12 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   const [evaluation, setEvaluation] = useState<PronunciationEvaluation | null>(null);
   const [micWarning, setMicWarning] = useState<string | null>(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
+  const [dictationAvailable, setDictationAvailable] = useState(false);
+  const [dictationText, setDictationText] = useState('');
+  const [evaluationSource, setEvaluationSource] = useState<'speech' | 'dictation'>('speech');
+  const dictationRef = useRef<HTMLTextAreaElement | null>(null);
+  const iosHomeScreen = isIOSHomeScreen();
+  const showDictation = iosHomeScreen || dictationAvailable;
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -99,6 +115,9 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     setEvaluation(null);
     setMicWarning(null);
     setRecordedAudioUrl(null);
+    setDictationAvailable(false);
+    setDictationText('');
+    setEvaluationSource('speech');
     latestTranscriptRef.current = '';
     return () => {
       clearWatchdog();
@@ -132,8 +151,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
 
   const errorMessage = (error?: string) => {
     switch (error) {
-      case 'not-allowed':
       case 'service-not-allowed':
+        return isIOSDevice() ? message('خدمة التعرف المباشر ما متوفراش فهاد الوضع. جرّب إملاء لوحة مفاتيح iPhone لتحت، أو فتح الموقع فـ Safari وتأكد من تفعيل الإملاء.', 'La reconnaissance directe n’est pas disponible ici. Utilisez la dictée du clavier iPhone ci-dessous, ou ouvrez le site dans Safari et vérifiez que la dictée est activée.', 'Direct speech recognition is unavailable here. Use iPhone keyboard dictation below, or open the site in Safari and check that Dictation is enabled.') : message('خدمة التعرف على الكلام غير متوفرة حالياً. تحقق من إعدادات الجهاز والإنترنت.', 'Le service de reconnaissance vocale est indisponible. Vérifiez les réglages et la connexion.', 'The speech recognition service is unavailable. Check device settings and internet access.');
+      case 'not-allowed':
+        if (iosHomeScreen) return message('التعرف المباشر ممكن ما يخدمش فتطبيق الآيفون حتى إلا كان المايك مسموح. استعمل إملاء لوحة المفاتيح أو جرّب Safari.', 'La reconnaissance directe peut être indisponible dans l’app iPhone même si le micro est autorisé. Utilisez la dictée du clavier ou essayez Safari.', 'Direct recognition may be unavailable in the iPhone app even with microphone permission. Use keyboard dictation or try Safari.');
         return message('المايكروفون أو خدمة التعرف على الكلام ما عندهاش الإذن. سمح بالمايكروفون فإعدادات الموقع والجهاز، وجرب تفتح الرابط مباشرة فـ Chrome أو Safari.', 'Autorisez le microphone et la reconnaissance vocale dans les réglages du site et de l’appareil. Essayez directement dans Chrome ou Safari.', 'Allow microphone and speech recognition access in your site and device settings. Try opening the site directly in Chrome or Safari.');
       case 'audio-capture':
         return message('ما لقيناش المايكروفون أو راه مستعمل من تطبيق آخر. تأكد من المايك وجرب مرة أخرى.', 'Microphone introuvable ou utilisé par une autre application. Vérifiez-le et réessayez.', 'No microphone is available, or another app is using it. Check your microphone and try again.');
@@ -181,6 +202,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     setMicWarning(null);
     setLiveTranscript('');
     setEvaluation(null);
+    setEvaluationSource('speech');
     latestTranscriptRef.current = '';
     clearRecording();
     // Prevent the prompt or its delayed speech from being transcribed as the answer.
@@ -192,6 +214,11 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     };
     const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
     if (!SpeechRec) {
+      if (isIOSDevice()) {
+        busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
+        setMicWarning(message('التعرف المباشر غير متوفر هنا. تقدر تستعمل إملاء لوحة المفاتيح لتحت.', 'La reconnaissance directe est indisponible. Utilisez la dictée du clavier ci-dessous.', 'Direct recognition is unavailable. Use keyboard dictation below.'));
+        return;
+      }
       // Recording is only a listen-back fallback, not speech recognition or a score.
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
         busyRef.current = false; setPhase('idle');
@@ -233,8 +260,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     try {
       const rec = new SpeechRec();
       recRef.current = rec;
-      const ua = navigator.userAgent;
-      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      const isIOS = isIOSDevice();
       const recognitionLang = speechLang || audioLang;
       rec.lang = isIOS && recognitionLang === 'ar-MA' ? 'ar-SA' : recognitionLang;
       rec.interimResults = true;
@@ -257,6 +283,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         busyRef.current = false;
         setPhase('idle');
         setMicWarning(errorMessage(event.error));
+        if (isIOSDevice()) setDictationAvailable(true);
         try { rec.abort?.(); } catch { /* already stopped */ }
       };
       rec.onend = () => {
@@ -266,7 +293,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         busyRef.current = false;
         setPhase('idle');
         if (!failed && latestTranscriptRef.current) finalizeEvaluation(latestTranscriptRef.current);
-        else if (!failed) setMicWarning(errorMessage('no-speech'));
+        else if (!failed) { setMicWarning(errorMessage('no-speech')); if (isIOSDevice()) setDictationAvailable(true); }
       };
       // Keep start in the original user gesture, as required by mobile browsers.
       timeoutRef.current = setTimeout(() => {
@@ -274,11 +301,21 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         sessionRef.current++; recRef.current = null; busyRef.current = false; setPhase('idle');
         try { rec.abort?.(); } catch { /* already stopped */ }
         setMicWarning(errorMessage());
+        if (isIOSDevice()) setDictationAvailable(true);
       }, 15000);
       rec.start();
     } catch {
-      clearWatchdog(); recRef.current = null; busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage());
+      clearWatchdog(); recRef.current = null; busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage()); if (isIOSDevice()) setDictationAvailable(true);
     }
+  };
+
+  const checkDictation = () => {
+    const text = dictationText.trim();
+    if (!text || disabled || isRecording) return;
+    setEvaluationSource('dictation');
+    setMicWarning(null);
+    setLiveTranscript(text);
+    finalizeEvaluation(text);
   };
 
   const playRecordedVoice = () => {
@@ -361,7 +398,23 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
 
       </div>
 
-      {/* Live Microphone Waveform & Capture Controls */}
+      {/* iOS Home Screen Web Apps may expose SpeechRecognition but reject it.
+          Keyboard dictation is an explicit text-comparison alternative. */}
+      {showDictation && (
+        <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border-2 border-sky-200 dark:border-sky-800 space-y-3">
+          <h3 className="font-black text-sky-900 dark:text-sky-100">🎙️ {message('الإملاء بلوحة مفاتيح الآيفون', 'Dictée avec le clavier iPhone', 'Dictation with the iPhone keyboard')}</h3>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{message('1. اضغط على الخانة. 2. اختار لغة الجملة من لوحة المفاتيح واضغط على المايك ديالها 🎙️. 3. قول الجملة، وقف الإملاء، ثم اضغط «تحقق من النص».', '1. Touchez le champ. 2. Choisissez la langue de la phrase sur le clavier et touchez son micro 🎙️. 3. Dictez, arrêtez la dictée, puis touchez « Vérifier le texte ».', '1. Tap the text box. 2. Select the sentence language on the keyboard and tap its microphone 🎙️. 3. Speak, stop dictation, then tap “Check text”.')}</p>
+          <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">{message('إلا ما بانش المايك فاللوحة، فعّل الإملاء من إعدادات iPhone ← عام ← لوحة المفاتيح. هاد الطريقة كتقارن النص فقط، ما كتقيّمش النطق مباشرة.', 'Si le micro du clavier est absent, activez Dictée dans Réglages iPhone → Général → Clavier. Cette méthode compare uniquement le texte, pas la prononciation.', 'If the keyboard microphone is missing, enable Dictation in iPhone Settings → General → Keyboard. This compares text only; it does not measure pronunciation.')}</p>
+          <label htmlFor="ios-dictation-text" className="block text-sm font-black text-slate-800 dark:text-slate-100">{message('النص من الإملاء أو الكتابة:', 'Texte dicté ou saisi :', 'Dictated or typed text:')}</label>
+          <textarea id="ios-dictation-text" ref={dictationRef} value={dictationText} onChange={e => setDictationText(e.target.value)} disabled={disabled || isRecording} lang={speechLang || audioLang} dir="auto" rows={2} placeholder={message('اضغط هنا ثم استعمل مايك لوحة المفاتيح', 'Touchez ici puis utilisez le micro du clavier', 'Tap here, then use the keyboard microphone')} className="w-full p-3 rounded-xl bg-white dark:bg-duo-nightCard border-2 border-slate-300 dark:border-duo-nightBorder text-slate-900 dark:text-white text-base" />
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={disabled || isRecording} onClick={() => dictationRef.current?.focus()} className="px-4 py-2.5 rounded-xl bg-duo-blue border-b-4 border-duo-blueDark text-white font-black text-sm">{message('فتح لوحة المفاتيح', 'Ouvrir le clavier', 'Open keyboard')}</button>
+            <button type="button" disabled={disabled || isRecording || !dictationText.trim()} onClick={checkDictation} className="px-4 py-2.5 rounded-xl bg-duo-green border-b-4 border-duo-greenDark text-white font-black text-sm disabled:opacity-50">{message('تحقق من النص', 'Vérifier le texte', 'Check text')}</button>
+          </div>
+        </div>
+      )}
+
+      {/* Direct recognition when supported. */}
       <div className="flex flex-col items-center gap-3">
         {isRecording && (
           <p role="status" aria-live="polite" className="text-sm font-bold text-rose-700 dark:text-rose-300 text-center">
@@ -392,7 +445,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             ) : (
               <>
                 <Mic className="w-6 h-6" />
-                {t(UI_STRINGS.tapToSpeak, uiLang)}
+                {iosHomeScreen ? message('جرّب المايك المباشر (قد لا يتوفر)', 'Essayer le micro direct (parfois indisponible)', 'Try direct microphone (may be unavailable)') : t(UI_STRINGS.tapToSpeak, uiLang)}
               </>
             )}
           </button>
@@ -423,7 +476,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
                 dir="auto"
                 className="font-extrabold text-sm sm:text-base text-slate-800 dark:text-slate-100"
               >
-                🎙️ &ldquo;{liveTranscript}&rdquo;
+                {evaluationSource === 'dictation' ? '📝' : '🎙️'} &ldquo;{liveTranscript}&rdquo;
               </div>
             )}
             {evaluation && (
@@ -438,10 +491,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
                   }`}
                 >
                   {uiLang === 'ar'
-                    ? `تطابق الكلام المتعرّف عليه: ${evaluation.score}%`
+                    ? evaluationSource === 'dictation' ? `تطابق النص: ${evaluation.score}%` : `تطابق الكلام المتعرّف عليه: ${evaluation.score}%`
                     : uiLang === 'fr'
-                    ? `Correspondance du texte reconnu : ${evaluation.score}%`
-                    : `Recognized text match: ${evaluation.score}%`}
+                    ? evaluationSource === 'dictation' ? `Correspondance du texte : ${evaluation.score}%` : `Correspondance du texte reconnu : ${evaluation.score}%`
+                    : evaluationSource === 'dictation' ? `Text match: ${evaluation.score}%` : `Recognized text match: ${evaluation.score}%`}
                 </span>
               </div>
             )}

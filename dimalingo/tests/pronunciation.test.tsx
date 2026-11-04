@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import React, { act } from 'react';
-import { createRoot } from 'react-dom/client';
 import { PronunciationRecorder } from '../src/components/PronunciationRecorder';
 import { SpeakingLabView } from '../src/components/SpeakingLabView';
 import { COURSE_MAP } from '../src/data';
@@ -9,6 +8,8 @@ import { COURSE_MAP } from '../src/data';
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://dimalingo.vercel.app/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true });
 Object.defineProperty(globalThis, 'navigator', { value: dom.window.navigator, configurable: true });
+const { createRoot } = await import('react-dom/client');
+const { Simulate } = await import('react-dom/test-utils');
 let captureCalls = 0;
 Object.defineProperty(navigator, 'mediaDevices', { configurable: true, value: { getUserMedia: () => { captureCalls++; return Promise.reject(new DOMException('blocked', 'NotAllowedError')); } } });
 class FakeRecognition {
@@ -101,5 +102,43 @@ await act(async () => root3.render(<PronunciationRecorder targetSentence="سلا
 await act(async () => click('Tap and speak'));
 assert.equal(FakeRecognition.instances.at(-1)?.lang, 'ar-MA', 'recognition must use the course recognition locale, independently of the audio locale');
 await act(async () => root3.unmount());
+
+// iOS Home Screen: no direct recognition needed for keyboard dictation.
+Object.defineProperty(navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit' });
+Object.defineProperty(navigator, 'standalone', { configurable: true, value: true });
+const root4 = createRoot(document.getElementById('root')!);
+let dictated: Array<{text: string; score: number}> = [];
+const renderIOS = (target: string) => root4.render(<PronunciationRecorder targetSentence={target} audioText={target} audioLang="fr-FR" uiLang="fr" onEvaluated={(text, result) => dictated.push({text, score: result.score})} />);
+const beforeInstances = FakeRecognition.instances.length;
+await act(async () => renderIOS('Bonjour'));
+assert(document.body.textContent?.includes('Dictée avec le clavier iPhone'));
+assert(document.body.textContent?.includes('compare uniquement le texte'));
+assert.equal(FakeRecognition.instances.length, beforeInstances);
+const box = document.querySelector('textarea')!;
+assert.equal(box.lang, 'fr-FR');
+await act(async () => click('Ouvrir le clavier'));
+assert.equal(document.activeElement, box);
+assert((Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Vérifier le texte')) as HTMLButtonElement).disabled);
+await act(async () => Simulate.change(box, { target: { value: 'Bonjour' } }));
+assert.equal(dictated.length, 0, 'dictation text must not be evaluated before confirmation');
+await act(async () => click('Vérifier le texte'));
+assert.deepEqual(dictated, [{text:'Bonjour', score:100}]);
+assert(document.body.textContent?.includes('Correspondance du texte :'));
+await act(async () => renderIOS('Merci'));
+assert.equal((document.querySelector('textarea') as HTMLTextAreaElement).value, '', 'dictation text must reset for a new phrase');
+await act(async () => root4.unmount());
+
+// On an iPhone Safari tab, direct speech remains the default; a service failure
+// offers keyboard dictation instead of treating it solely as microphone denial.
+Object.defineProperty(navigator, 'standalone', { configurable: true, value: false });
+const root5 = createRoot(document.getElementById('root')!);
+await act(async () => root5.render(<PronunciationRecorder targetSentence="Bonjour" audioText="Bonjour" audioLang="fr-FR" uiLang="fr" onEvaluated={() => {}} />));
+assert(!document.querySelector('textarea'));
+await act(async () => click('Appuyez et parlez'));
+const iosRecognizer = FakeRecognition.instances.at(-1)!;
+await act(async () => iosRecognizer.onerror?.({error:'service-not-allowed'}));
+assert(document.body.textContent?.includes('Dictée avec le clavier iPhone'));
+assert(document.body.textContent?.includes('reconnaissance directe'));
+await act(async () => root5.unmount());
 dom.window.close();
 console.log('Microphone recognition, stop, errors, retry, stale callbacks and unsupported-browser denial: OK');
