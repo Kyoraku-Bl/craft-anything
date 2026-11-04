@@ -589,7 +589,13 @@
       if (!label) { toast(T.t('proToastTfInvalid')); return; }
       if (!S.customTfs.includes(m)) S.customTfs.push(m);
       persist(); RL.app.buildSelects(); syncIndicatorInputs();
-      const tf = $('sel-tf'); if (tf) { tf.value = label; engine.switchMarket(engine.s.symbol, label); RL.app.requestRender(); }
+      const tf = $('sel-tf');
+      if (tf) {
+        tf.value = label;
+        engine.switchMarket(engine.s.symbol, label);
+        RL.app.buildSelects();
+        RL.app.requestRender();
+      }
       toast(T.t('proToastTfAdded') + ' · ' + label);
     });
 
@@ -660,8 +666,9 @@
 
     // Events.
     on('btn-add-event', 'click', () => {
-      const raw = $('input-event-time').value;
-      const t = raw ? Date.parse(raw + (raw.length === 16 ? ':00Z' : 'Z')) : NaN;
+      const raw = ($('input-event-time').value || '').trim();
+      const iso = raw.endsWith('Z') ? raw : (raw.length === 16 ? raw + ':00Z' : raw + 'Z');
+      const t = raw ? Date.parse(iso) : NaN;
       const title = ($('input-event-title').value || '').trim().slice(0, 80) || 'Event';
       if (!Number.isFinite(t)) { toast(T.t('proToastError')); return; }
       S.events.push({ id: C.uid('e'), t, title, impact: $('sel-event-impact').value });
@@ -685,7 +692,7 @@
           if (importMode === 'pro') {
             S = C.sanitize(JSON.parse(text)); persist();
             applyAccent(); for (const m of S.customTfs) C.registerCustomTf(m);
-            syncIndicatorInputs(); renderStrategySelects(); renderStrategies(); renderInsights();
+            RL.app.buildSelects(); syncIndicatorInputs(); renderStrategySelects(); renderStrategies(); renderInsights();
             renderEvents(); renderPending(); applyLayout(); RL.app.requestRender();
           } else {
             let arr;
