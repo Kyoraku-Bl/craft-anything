@@ -3,7 +3,32 @@
 
 class SoundManager {
   private ctx: AudioContext | null = null;
+  private unlocked = false;
   public enabled = true;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      const unlock = () => {
+        if (this.unlocked) return;
+        const ctx = this.getContext();
+        if (ctx) {
+          try {
+            // Play silent 1-sample buffer to unlock iOS WebKit AudioContext on all iOS versions
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            this.unlocked = true;
+          } catch {
+            // Ignore
+          }
+        }
+      };
+      window.addEventListener('touchstart', unlock, { passive: true, once: true });
+      window.addEventListener('click', unlock, { passive: true, once: true });
+    }
+  }
 
   private getContext(): AudioContext | null {
     if (!this.enabled || typeof window === 'undefined') return null;

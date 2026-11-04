@@ -38,6 +38,7 @@ import { ProfileView } from './components/ProfileView';
 import { HowItWorksView } from './components/HowItWorksView';
 import { ZikoMascot } from './components/ZikoMascot';
 import { AndroidApkModal } from './components/AndroidApkModal';
+import { IosInstallModal } from './components/IosInstallModal';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -85,6 +86,15 @@ export function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('apk') === '1' || params.get('install') === 'android';
   });
+  const [iosModalOpen, setIosModalOpen] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return (
+      params.get('ios') === '1' ||
+      params.get('iphone') === '1' ||
+      params.get('install') === 'ios'
+    );
+  });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -111,6 +121,7 @@ export function App() {
           onToggleDarkMode={toggleDarkMode}
           onChangeLang={setUILang}
           onOpenApkModal={() => setApkModalOpen(true)}
+          onOpenIosModal={() => setIosModalOpen(true)}
           onComplete={completeOnboarding}
         />
         <AndroidApkModal
@@ -119,6 +130,13 @@ export function App() {
           canInstallPwa={Boolean(deferredPrompt)}
           onInstallPwa={handleInstallPwa}
           onClose={() => setApkModalOpen(false)}
+          onSwitchToIos={() => setIosModalOpen(true)}
+        />
+        <IosInstallModal
+          open={iosModalOpen}
+          uiLang={user.uiLang}
+          onClose={() => setIosModalOpen(false)}
+          onSwitchToAndroid={() => setApkModalOpen(true)}
         />
       </>
     );
@@ -308,18 +326,31 @@ export function App() {
             })}
           </nav>
 
-          {/* Direct Android APK Button in Sidebar */}
-          <button
-            type="button"
-            onClick={() => {
-              sound.playTap();
-              setApkModalOpen(true);
-            }}
-            className="w-full py-2.5 px-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-950 border-2 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-black text-xs flex items-center justify-center gap-2 transition-all"
-          >
-            <Download className="w-4 h-4" />
-            {t(UI_STRINGS.androidApkBtn, uiLang)}
-          </button>
+          {/* Direct iPhone (iOS) + Android (APK) Install Buttons in Sidebar */}
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playTap();
+                setIosModalOpen(true);
+              }}
+              className="py-2.5 px-2 rounded-2xl bg-sky-50 dark:bg-sky-950/50 hover:bg-sky-100 dark:hover:bg-sky-950 border-2 border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-300 font-black text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <span>🍎</span>
+              <span>iPhone</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                sound.playTap();
+                setApkModalOpen(true);
+              }}
+              className="py-2.5 px-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-950 border-2 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 font-black text-xs flex items-center justify-center gap-1.5 transition-all"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>APK</span>
+            </button>
+          </div>
         </div>
 
         {/* Bottom Light / Dark Switcher + UI Language Switcher */}
@@ -521,6 +552,20 @@ export function App() {
                 )}
               </button>
 
+              {/* iPhone / iOS Quick Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  sound.playTap();
+                  setIosModalOpen(true);
+                }}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-50 dark:bg-sky-950/60 border-2 border-sky-300 dark:border-sky-800 text-sky-800 dark:text-sky-300 font-black text-xs"
+                title="Install on iPhone / iPad (All iOS)"
+              >
+                <span>🍎</span>
+                <span className="hidden md:inline">iOS</span>
+              </button>
+
               {/* Android APK Quick Button */}
               <button
                 type="button"
@@ -595,13 +640,20 @@ export function App() {
           </div>
         )}
 
-        {/* Android APK Installer Modal */}
+        {/* Android APK & iOS Installer Modals */}
         <AndroidApkModal
           open={apkModalOpen}
           uiLang={uiLang}
           canInstallPwa={Boolean(deferredPrompt)}
           onInstallPwa={handleInstallPwa}
           onClose={() => setApkModalOpen(false)}
+          onSwitchToIos={() => setIosModalOpen(true)}
+        />
+        <IosInstallModal
+          open={iosModalOpen}
+          uiLang={uiLang}
+          onClose={() => setIosModalOpen(false)}
+          onSwitchToAndroid={() => setApkModalOpen(true)}
         />
 
         {/* Content + Right Widgets Grid */}
@@ -724,22 +776,28 @@ export function App() {
                   </p>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-1.5">
                 <button
                   type="button"
                   onClick={() => setActiveTab('speaking_lab')}
-                  className="py-2.5 px-2 rounded-xl bg-white/95 hover:bg-white text-emerald-900 font-black text-xs transition-all flex items-center justify-center gap-1"
+                  className="py-2.5 px-2 rounded-xl bg-white/95 hover:bg-white text-emerald-900 font-black text-[11px] transition-all flex items-center justify-center gap-1"
                 >
                   <Mic className="w-3.5 h-3.5 text-rose-500" />
-                  {uiLang === 'ar' ? 'مختبر النطق' : 'Speaking'}
+                  {uiLang === 'ar' ? 'النطق' : 'Speak'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIosModalOpen(true)}
+                  className="py-2.5 px-2 rounded-xl bg-emerald-900/40 hover:bg-emerald-900/60 text-white font-black text-[11px] transition-all flex items-center justify-center gap-1"
+                >
+                  <span>🍎</span> iOS
                 </button>
                 <button
                   type="button"
                   onClick={() => setApkModalOpen(true)}
-                  className="py-2.5 px-2 rounded-xl bg-emerald-900/40 hover:bg-emerald-900/60 text-white font-black text-xs transition-all flex items-center justify-center gap-1"
+                  className="py-2.5 px-2 rounded-xl bg-emerald-900/40 hover:bg-emerald-900/60 text-white font-black text-[11px] transition-all flex items-center justify-center gap-1"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  Android APK
+                  <Download className="w-3.5 h-3.5" /> APK
                 </button>
               </div>
             </div>

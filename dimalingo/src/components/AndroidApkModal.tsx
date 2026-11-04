@@ -17,6 +17,7 @@ interface AndroidApkModalProps {
   canInstallPwa: boolean;
   onInstallPwa: () => void;
   onClose: () => void;
+  onSwitchToIos?: () => void;
 }
 
 export const AndroidApkModal: React.FC<AndroidApkModalProps> = ({
@@ -25,6 +26,7 @@ export const AndroidApkModal: React.FC<AndroidApkModalProps> = ({
   canInstallPwa,
   onInstallPwa,
   onClose,
+  onSwitchToIos,
 }) => {
   const [copied, setCopied] = useState(false);
 
@@ -54,6 +56,33 @@ export const AndroidApkModal: React.FC<AndroidApkModalProps> = ({
         className="bg-white dark:bg-duo-nightCard rounded-3xl border-2 border-slate-200 dark:border-duo-nightBorder max-w-lg w-full max-h-[90vh] overflow-y-auto p-6 space-y-5 shadow-2xl animate-pop"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Platform Switcher Tabs */}
+        {onSwitchToIos && (
+          <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-slate-100 dark:bg-duo-nightSubtle">
+            <button
+              type="button"
+              onClick={() => {
+                sound.playTap();
+                onClose();
+                onSwitchToIos();
+              }}
+              className="py-2 px-3 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-black text-xs flex items-center justify-center gap-1.5 transition-colors"
+            >
+              <span>🍎</span>
+              <span>
+                {uiLang === 'ar' ? 'iPhone / iPad (كل iOS)' : 'iPhone / iPad (All iOS)'}
+              </span>
+            </button>
+            <button
+              type="button"
+              className="py-2 px-3 rounded-xl bg-white dark:bg-duo-nightCard text-slate-900 dark:text-white font-black text-xs shadow-sm flex items-center justify-center gap-1.5"
+            >
+              <span>🤖</span>
+              <span>{uiLang === 'ar' ? 'Android (ملف APK)' : 'Android (APK)'}</span>
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">

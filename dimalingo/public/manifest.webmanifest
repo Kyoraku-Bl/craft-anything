@@ -1,12 +1,31 @@
 {
   "name": "DimaLingo - ديما لينغو (100% Free)",
   "short_name": "DimaLingo",
-  "description": "تعلم الإنجليزية، الفرنسية، الإسبانية والدارجة المغربية بطريقة ممتعة ومجانية 100% للأبد بدون خطط مدفوعة",
-  "start_url": "/",
+  "description": "تعلم الإنجليزية، الفرنسية، الإسبانية والدارجة المغربية من A1 حتى C2 بطريقة ممتعة ومجانية 100% للأبد بدون خطط مدفوعة",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "background_color": "#f8fafc",
   "theme_color": "#58CC02",
   "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/icon.svg",
       "sizes": "any",

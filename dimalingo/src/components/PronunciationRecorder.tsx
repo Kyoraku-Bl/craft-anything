@@ -142,7 +142,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaStreamRef.current = stream;
 
-      // Record user's own voice for playback comparison!
+      // Record user's own voice for playback comparison (supports audio/mp4 on iOS & audio/webm on Android/Desktop)!
       if (typeof MediaRecorder !== 'undefined') {
         const chunks: BlobPart[] = [];
         const mr = new MediaRecorder(stream);
@@ -152,7 +152,8 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         };
         mr.onstop = () => {
           if (chunks.length > 0) {
-            const blob = new Blob(chunks, { type: 'audio/webm' });
+            const mime = mr.mimeType || 'audio/mp4';
+            const blob = new Blob(chunks, { type: mime });
             const url = URL.createObjectURL(blob);
             setRecordedAudioUrl((prev) => {
               if (prev) URL.revokeObjectURL(prev);
@@ -227,10 +228,15 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
       webkitSpeechRecognition?: new () => SpeechRecognitionLike;
     };
     const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
-
-    await startLiveWaveformAndRecorder();
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+    const isIOSDevice =
+      /iPad|iPhone|iPod/.test(ua) ||
+      (typeof navigator !== 'undefined' &&
+        navigator.platform === 'MacIntel' &&
+        navigator.maxTouchPoints > 1);
 
     if (!SpeechRec) {
+      await startLiveWaveformAndRecorder();
       setIsRecording(true);
       setMicWarning(
         uiLang === 'ar'
@@ -240,10 +246,24 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
       return;
     }
 
+    // On iOS WebKit, SpeechRecognition.start() must execute synchronously inside user tap
+    // without competing with a simultaneous getUserMedia stream!
+    if (!isIOSDevice) {
+      startLiveWaveformAndRecorder().catch(() => {});
+    } else {
+      const pulse = () => {
+        setBars(
+          Array.from({ length: 14 }, () => Math.floor(22 + Math.random() * 68))
+        );
+        animFrameRef.current = requestAnimationFrame(pulse);
+      };
+      pulse();
+    }
+
     try {
       const rec = new SpeechRec();
       recRef.current = rec;
-      rec.lang = audioLang === 'ar-MA' ? 'ar-MA' : audioLang;
+      rec.lang = isIOSDevice && audioLang === 'ar-MA' ? 'ar-SA' : audioLang;
       rec.interimResults = true;
       rec.continuous = false;
       rec.maxAlternatives = 2;

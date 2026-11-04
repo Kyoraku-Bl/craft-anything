@@ -20,6 +20,7 @@ interface OnboardingViewProps {
   onToggleDarkMode: () => void;
   onChangeLang: (lang: UILang) => void;
   onOpenApkModal: () => void;
+  onOpenIosModal: () => void;
   onComplete: (params: {
     name: string;
     uiLang: UILang;
@@ -34,6 +35,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   onToggleDarkMode,
   onChangeLang,
   onOpenApkModal,
+  onOpenIosModal,
   onComplete,
 }) => {
   const [step, setStep] = useState<1 | 2>(1);
@@ -101,8 +103,21 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
           </div>
         </div>
 
-        {/* Theme Switcher + APK + Interface Language */}
+        {/* Theme Switcher + iOS + APK + Interface Language */}
         <div className="flex items-center gap-2 flex-wrap">
+          {/* iPhone / iOS Install Button */}
+          <button
+            type="button"
+            onClick={() => {
+              sound.playTap();
+              onOpenIosModal();
+            }}
+            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-sky-100 dark:bg-sky-950/80 border border-sky-300 dark:border-sky-800 text-sky-900 dark:text-sky-300 font-black text-xs hover:brightness-95"
+          >
+            <span>🍎</span>
+            <span>iPhone</span>
+          </button>
+
           {/* Android APK Download Button */}
           <button
             type="button"
