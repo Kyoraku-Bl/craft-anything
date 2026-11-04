@@ -188,6 +188,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
   };
 
   const finalizeAnswer = (isCorrect: boolean) => {
+    if (courseId === 'fusha' && currentExercise.grammarTip) setShowExplain(true);
     const isFirstAttempt = !seenIds.has(currentExercise.id);
     if (isFirstAttempt) {
       setSeenIds((prev) => new Set(prev).add(currentExercise.id));

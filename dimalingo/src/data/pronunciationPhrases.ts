@@ -414,4 +414,22 @@ export const EXTRA_PRONUNCIATION_PHRASES: PronunciationPhrase[] = [
     meaning: { ar: 'تحدي الفصاحة المغربية الشهير: التمييز السريع بين الخاء والحاء!', fr: 'Virelangue marocain traditionnel alternant « kh » et « 7 » !', en: 'Classic Moroccan tongue-twister alternating "kh" and pharyngeal "7"!' },
     tip: { ar: 'أشهر تحدي نطق مغربي من الطفولة! جرب تقولها بالزربة فالمايكروفون! 🔥🇲🇦', fr: 'Le virelangue le plus célèbre du patrimoine oral marocain !', en: 'Morocco’s most famous traditional tongue-twister!' },
   },
+  ...([
+    ['A1','daily','مَرْحَبًا، كَيْفَ حَالُكَ؟','marḥaban, kayfa ḥāluka','مرحباً، كيف حالك؟','Bonjour, comment allez-vous ?','Hello, how are you?'],
+    ['A1','daily','أَنَا أَتَعَلَّمُ اللُّغَةَ الْعَرَبِيَّةَ','anā ataʿallamu al-lughata al-ʿarabiyyata','أنا أدرس اللغة العربية','J’apprends l’arabe','I am learning Arabic'],
+    ['A2','daily','أُرِيدُ أَنْ أَقْرَأَ كِتَابًا جَدِيدًا','urīdu an aqraʾa kitāban jadīdan','أرغب في قراءة كتاب جديد','Je veux lire un nouveau livre','I want to read a new book'],
+    ['A2','travel','أَيْنَ تَقَعُ الْمَكْتَبَةُ الْعَامَّةُ؟','ayna taqaʿu al-maktabatu al-ʿāmmatu','أين توجد المكتبة العامة؟','Où se trouve la bibliothèque publique ?','Where is the public library?'],
+    ['B1','work','كَانَ الْمُعَلِّمُ صَبُورًا وَمُخْلِصًا','kāna al-muʿallimu ṣabūran wa-mukhliṣan','اتصف المعلم بالصبر والإخلاص','L’enseignant était patient et dévoué','The teacher was patient and devoted'],
+    ['B1','daily','إِنَّ الْقِرَاءَةَ تَفْتَحُ أَبْوَابَ الْمَعْرِفَةِ','inna al-qirāʾata taftaḥu abwāba al-maʿrifati','القراءة طريق إلى المعرفة','La lecture ouvre les portes du savoir','Reading opens the doors of knowledge'],
+    ['B2','debate','إِنْ نَتَعَاوَنْ نَحْقِقْ أَهْدَافَنَا','in nataʿāwan naḥqiq ahdāfanā','إذا تعاونّا بلغنا أهدافنا','Si nous coopérons, nous atteindrons nos objectifs','If we cooperate, we will achieve our goals'],
+    ['B2','work','لَنْ نَتَأَخَّرَ عَنْ مَوْعِدِ الِاجْتِمَاعِ','lan nataʾakhkhara ʿan mawʿidi al-ijtimāʿi','لن نصل متأخرين إلى الاجتماع','Nous ne serons pas en retard à la réunion','We will not be late for the meeting'],
+    ['C1','debate','نَسْعَى إِلَى الْعَدْلِ رَغْبَةً فِي سَلَامِ الْمُجْتَمَعِ','nasʿā ilā al-ʿadli raghbatan fī salāmi al-mujtamaʿi','نطلب العدل من أجل سلام المجتمع','Nous recherchons la justice pour la paix sociale','We seek justice for the peace of society'],
+    ['C1','work','تَحَدَّثَ الْخَطِيبُ وَاثِقًا أَمَامَ الْجُمْهُورِ','taḥaddatha al-khaṭību wāthiqan amāma al-jumhūri','ألقى الخطيب كلامه بثقة أمام الناس','L’orateur a parlé avec assurance devant le public','The speaker spoke confidently before the audience'],
+    ['C2','idioms','الْعِلْمُ نُورٌ وَالْجَهْلُ ظَلَامٌ','al-ʿilmu nūrun wa-l-jahlu ẓalāmun','العلم يهدي والجهل يعمي','Le savoir est lumière et l’ignorance obscurité','Knowledge is light and ignorance is darkness'],
+    ['C2','debate','مَا أَجْمَلَ الْبَيَانَ حِينَ يَجْمَعُ بَيْنَ الدِّقَّةِ وَالْجَمَالِ','mā ajmala al-bayāna ḥīna yajmaʿu bayna al-diqqati wa-l-jamāli','جميل أن يجمع التعبير بين الدقة والجمال','Quelle beauté dans une expression à la fois précise et élégante','How beautiful eloquence is when it combines precision and beauty'],
+  ] as const).map(([cefr, category, target, phonetic, ar, fr, en], i) => ({
+    id: `pp_fusha_${i + 1}`, courseId: 'fusha' as const, cefr, category, target, phonetic,
+    meaning: { ar, fr, en },
+    tip: { ar: 'استمع للجملة، وانتبه للحركات والحروف الحلقية، ثم كرّر بوضوح.', fr: 'Écoutez les voyelles et les consonnes gutturales, puis répétez clairement.', en: 'Listen to the vowels and throat consonants, then repeat clearly.' },
+  })),
 ];

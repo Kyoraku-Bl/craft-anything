@@ -25,6 +25,7 @@ import {
 } from '../types';
 import { sound } from '../utils/sound';
 import { ZikoMascot } from './ZikoMascot';
+import { ArabicGrammarGuideModal } from './ArabicGrammarGuideModal';
 
 interface LearningPathViewProps {
   course: Course;
@@ -97,6 +98,7 @@ export const LearningPathView: React.FC<LearningPathViewProps> = ({
   onClaimChest,
 }) => {
   const [guideUnit, setGuideUnit] = useState<Unit | null>(null);
+  const [showArabicGuide, setShowArabicGuide] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [cefrFilter, setCefrFilter] = useState<CEFRLevel | 'ALL'>('ALL');
 
@@ -143,6 +145,8 @@ export const LearningPathView: React.FC<LearningPathViewProps> = ({
 
   return (
     <div className="space-y-8 pb-16">
+      {course.id === 'fusha' && <button type="button" onClick={() => setShowArabicGuide(true)} className="w-full flex items-center gap-3 rounded-2xl border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/40 p-4 text-start font-black text-indigo-800 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"><BookOpen className="w-6 h-6 shrink-0" /><span>{uiLang === 'ar' ? '📚 مرجع النحو والصرف والإعراب والبلاغة' : uiLang === 'fr' ? 'Guide de grammaire et de rhétorique arabe' : 'Arabic grammar and rhetoric guide'}</span></button>}
+      {showArabicGuide && course.id === 'fusha' && <ArabicGrammarGuideModal uiLang={uiLang} onClose={() => setShowArabicGuide(false)} />}
       {/* CEFR Level Progress Bar (A1 -> C2) */}
       <div className="bg-white dark:bg-duo-nightCard rounded-3xl border-2 border-slate-200 dark:border-duo-nightBorder p-4 shadow-sm space-y-3">
         <div className="flex items-center justify-between gap-2 flex-wrap">

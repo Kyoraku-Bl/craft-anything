@@ -30,13 +30,14 @@ export interface UnitInput {
 
 function tokenizeTarget(sentence: string): string[] {
   return sentence
-    .replace(/[.,!?;:¡¿«»"']/g, '')
+    .replace(/[.,!?;:¡¿«»"'،؛؟—()]/g, '')
     .split(/\s+/)
     .filter(Boolean);
 }
 
 function buildSelectExercise(
   id: string,
+  courseId: CourseId,
   cefr: CEFRLevel,
   ttsLang: string,
   item: VocabEntry,
@@ -52,11 +53,18 @@ function buildSelectExercise(
     phoneticHint: item.pronunciation,
     ttsLang,
     correctMeaning: item.meaning,
-    prompt: {
-      ar: `شنو كتعني هاد العبارة؟ (${cefr})`,
-      fr: `Que signifie cette expression ? (${cefr})`,
-      en: `What does this expression mean? (${cefr})`,
-    },
+    prompt:
+      courseId === 'fusha'
+        ? {
+            ar: `ما معنى هذه الجملة الفصيحة؟ (${cefr})`,
+            fr: `Quel est le sens de cette phrase ? (${cefr})`,
+            en: `What does this Fusha sentence mean? (${cefr})`,
+          }
+        : {
+            ar: `شنو كتعني هاد العبارة؟ (${cefr})`,
+            fr: `Que signifie cette expression ? (${cefr})`,
+            en: `What does this expression mean? (${cefr})`,
+          },
     correctAnswer: 'opt_correct',
     options: [
       { id: 'opt_correct', label: item.meaning },
@@ -71,6 +79,7 @@ function buildSelectExercise(
 
 function buildReverseSelectExercise(
   id: string,
+  courseId: CourseId,
   cefr: CEFRLevel,
   ttsLang: string,
   item: VocabEntry,
@@ -86,11 +95,18 @@ function buildReverseSelectExercise(
     phoneticHint: item.pronunciation,
     ttsLang,
     correctMeaning: item.meaning,
-    prompt: {
-      ar: `كيفاش كنقولو هاد المعنى؟ (${cefr})`,
-      fr: `Comment exprimer cette idée ? (${cefr})`,
-      en: `How do you express this meaning? (${cefr})`,
-    },
+    prompt:
+      courseId === 'fusha'
+        ? {
+            ar: `اختر الجملة الفصيحة المناسبة للمعنى (${cefr}):`,
+            fr: `Choisissez la phrase en arabe littéraire correspondant au sens (${cefr}) :`,
+            en: `Choose the vocalized Arabic sentence matching this meaning (${cefr}):`,
+          }
+        : {
+            ar: `كيفاش كنقولو هاد المعنى؟ (${cefr})`,
+            fr: `Comment exprimer cette idée ? (${cefr})`,
+            en: `How do you express this meaning? (${cefr})`,
+          },
     correctAnswer: 'opt_correct',
     options: [
       { id: 'opt_correct', label: item.target, tts: item.target },
@@ -166,6 +182,7 @@ function buildSpeakingExercise(
 
 function buildWordBankExercise(
   id: string,
+  courseId: CourseId,
   cefr: CEFRLevel,
   ttsLang: string,
   item: VocabEntry,
@@ -190,11 +207,18 @@ function buildWordBankExercise(
     ttsLang,
     correctMeaning: item.meaning,
     isTargetWordBank: true,
-    prompt: {
-      ar: 'ركّب الجملة الصحيحة انطلاقاً من المعنى:',
-      fr: 'Construisez la phrase correspondant à ce sens :',
-      en: 'Build the sentence matching this meaning:',
-    },
+    prompt:
+      courseId === 'fusha'
+        ? {
+            ar: 'رتّب الكلمات لتكوين جملة فصيحة سليمة نحوياً وإعرابياً:',
+            fr: 'Ordonnez les mots pour former une phrase littéraire correcte :',
+            en: 'Arrange the words to form a grammatically sound Fusha sentence:',
+          }
+        : {
+            ar: 'ركّب الجملة الصحيحة انطلاقاً من المعنى:',
+            fr: 'Construisez la phrase correspondant à ce sens :',
+            en: 'Build the sentence matching this meaning:',
+          },
     correctTokenSequence: correctTokens,
     wordBankTokens: bank,
     grammarTip: item.tip,
@@ -203,6 +227,7 @@ function buildWordBankExercise(
 
 function buildFillBlankExercise(
   id: string,
+  courseId: CourseId,
   cefr: CEFRLevel,
   ttsLang: string,
   item: VocabEntry,
@@ -211,11 +236,16 @@ function buildFillBlankExercise(
   const words = tokenizeTarget(item.target);
   const chosenWord =
     item.blankWord ||
-    words.reduce((longest, w) => (w.length > longest.length ? w : longest), words[0] || item.target);
+    words.reduce(
+      (longest, w) => (w.length > longest.length ? w : longest),
+      words[0] || item.target
+    );
 
   const escaped = chosenWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const blanked = item.target.replace(new RegExp(escaped, 'i'), '____');
-  const sentenceWithBlank = blanked.includes('____') ? blanked : `____ (${item.meaning.en})`;
+  const sentenceWithBlank = blanked.includes('____')
+    ? blanked
+    : `____ (${item.meaning.en})`;
 
   const extraWords =
     item.blankDistractors ||
@@ -237,11 +267,18 @@ function buildFillBlankExercise(
     phoneticHint: item.pronunciation,
     ttsLang,
     correctMeaning: item.meaning,
-    prompt: {
-      ar: 'كمّل الجملة بالكلمة المناسبة للسياق:',
-      fr: 'Complétez la phrase avec le mot approprié :',
-      en: 'Complete the sentence with the fitting word:',
-    },
+    prompt:
+      courseId === 'fusha'
+        ? {
+            ar: 'أكمل الجملة بالكلمة المضبوطة بالإعراب والتشكيل الصحيح:',
+            fr: 'Complétez avec le mot portant la bonne terminaison grammaticale (I’rab) :',
+            en: 'Complete the sentence with the word in the correct grammatical case (I’rab):',
+          }
+        : {
+            ar: 'كمّل الجملة بالكلمة المناسبة للسياق:',
+            fr: 'Complétez la phrase avec le mot approprié :',
+            en: 'Complete the sentence with the fitting word:',
+          },
     sentenceWithBlank,
     correctAnswer: chosenWord,
     options: [
@@ -322,24 +359,27 @@ export function buildCEFRCurriculum(
           cefr: u.cefr,
           icon: '📘',
           title: {
-            ar: `${u.cefr} • الدرس 1: المفردات المفتاحية`,
+            ar:
+              courseId === 'fusha'
+                ? `${u.cefr} • الدرس 1: القواعد التأسيسية والإعراب`
+                : `${u.cefr} • الدرس 1: المفردات المفتاحية`,
             fr: `${u.cefr} • Leçon 1 : Bases clés`,
-            en: `${u.cefr} • Lesson 1: Core Vocabulary`,
+            en: courseId === 'fusha' ? `${u.cefr} • Lesson 1: Core Foundations` : `${u.cefr} • Lesson 1: Core Vocabulary`,
           },
           subtitle: {
-            ar: '8 تمارين متنوعة • فهم، سماع وتركيب',
+            ar: courseId === 'fusha' ? '8 تمارين متنوعة • فهم، ضبط إعرابي وتركيب' : '8 تمارين متنوعة • فهم، سماع وتركيب',
             fr: '8 exercices variés • Compréhension & écoute',
             en: '8 varied exercises • Meaning, audio & recall',
           },
           xpReward: 20,
           gemReward: 12,
           exercises: [
-            buildSelectExercise(`${courseId}_${u.cefr}_1_1`, u.cefr, ttsLang, group1[0], items),
-            buildSelectExercise(`${courseId}_${u.cefr}_1_2`, u.cefr, ttsLang, group1[1], items),
+            buildSelectExercise(`${courseId}_${u.cefr}_1_1`, courseId, u.cefr, ttsLang, group1[0], items),
+            buildSelectExercise(`${courseId}_${u.cefr}_1_2`, courseId, u.cefr, ttsLang, group1[1], items),
             buildListeningExercise(`${courseId}_${u.cefr}_1_3`, u.cefr, ttsLang, group1[0], items),
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_1_4`, u.cefr, ttsLang, group1[2], items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_1_5`, u.cefr, ttsLang, group1[1], items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_1_6`, u.cefr, ttsLang, group1[3], items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_1_4`, courseId, u.cefr, ttsLang, group1[2], items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_1_5`, courseId, u.cefr, ttsLang, group1[1], items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_1_6`, courseId, u.cefr, ttsLang, group1[3], items),
             buildSpeakingExercise(`${courseId}_${u.cefr}_1_7`, u.cefr, ttsLang, group1[2]),
             buildMatchExercise(`${courseId}_${u.cefr}_1_8`, u.cefr, ttsLang, [
               group1[0],
@@ -358,7 +398,10 @@ export function buildCEFRCurriculum(
           cefr: u.cefr,
           icon: '🧩',
           title: {
-            ar: `${u.cefr} • الدرس 2: بناء الجمل والسياق`,
+            ar:
+              courseId === 'fusha'
+                ? `${u.cefr} • الدرس 2: تركيب الجمل والتشكيل`
+                : `${u.cefr} • الدرس 2: بناء الجمل والسياق`,
             fr: `${u.cefr} • Leçon 2 : Phrases en contexte`,
             en: `${u.cefr} • Lesson 2: Sentences in Context`,
           },
@@ -370,12 +413,12 @@ export function buildCEFRCurriculum(
           xpReward: 22,
           gemReward: 14,
           exercises: [
-            buildSelectExercise(`${courseId}_${u.cefr}_2_1`, u.cefr, ttsLang, group2[1], items),
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_2_2`, u.cefr, ttsLang, group2[2], items),
+            buildSelectExercise(`${courseId}_${u.cefr}_2_1`, courseId, u.cefr, ttsLang, group2[1], items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_2_2`, courseId, u.cefr, ttsLang, group2[2], items),
             buildListeningExercise(`${courseId}_${u.cefr}_2_3`, u.cefr, ttsLang, group2[1], items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_2_4`, u.cefr, ttsLang, group2[2], items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_2_5`, u.cefr, ttsLang, group2[3], items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_2_6`, u.cefr, ttsLang, group2[0], items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_2_4`, courseId, u.cefr, ttsLang, group2[2], items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_2_5`, courseId, u.cefr, ttsLang, group2[3], items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_2_6`, courseId, u.cefr, ttsLang, group2[0], items),
             buildSpeakingExercise(`${courseId}_${u.cefr}_2_7`, u.cefr, ttsLang, group2[3]),
             buildMatchExercise(`${courseId}_${u.cefr}_2_8`, u.cefr, ttsLang, [
               group2[0],
@@ -394,7 +437,7 @@ export function buildCEFRCurriculum(
           cefr: u.cefr,
           icon: '🎙️',
           title: {
-            ar: `${u.cefr} • ورشة النطق 1 (بالمايكروفون)`,
+            ar: courseId === 'fusha' ? `${u.cefr} • ورشة النطق والفصاحة 1 (بالمايكروفون)` : `${u.cefr} • ورشة النطق 1 (بالمايكروفون)`,
             fr: `${u.cefr} • Atelier Prononciation 1`,
             en: `${u.cefr} • Speaking Workshop 1 (Mic)`,
           },
@@ -422,24 +465,27 @@ export function buildCEFRCurriculum(
           cefr: u.cefr,
           icon: '💬',
           title: {
-            ar: `${u.cefr} • الدرس 3: تعابير المحادثة`,
-            fr: `${u.cefr} • Leçon 3 : Expressions courantes`,
-            en: `${u.cefr} • Lesson 3: Conversational Flow`,
+            ar:
+              courseId === 'fusha'
+                ? `${u.cefr} • الدرس 3: تطبيقات الإعراب والأساليب`
+                : `${u.cefr} • الدرس 3: تعابير المحادثة`,
+            fr: courseId === 'fusha' ? `${u.cefr} • Leçon 3 : Expressions & Syntaxe` : `${u.cefr} • Leçon 3 : Expressions courantes`,
+            en: courseId === 'fusha' ? `${u.cefr} • Lesson 3: Syntax & Expressions` : `${u.cefr} • Lesson 3: Conversational Flow`,
           },
           subtitle: {
-            ar: '8 تمارين • سرعة البديهة والاستماع',
+            ar: courseId === 'fusha' ? '8 تمارين • سرعة البديهة والضبط النحوي' : '8 تمارين • سرعة البديهة والاستماع',
             fr: '8 exercices • Fluidité & compréhension',
-            en: '8 exercises • Conversational fluency',
+            en: courseId === 'fusha' ? '8 exercises • Conversational & grammatical fluency' : '8 exercises • Conversational fluency',
           },
           xpReward: 22,
           gemReward: 14,
           exercises: [
-            buildSelectExercise(`${courseId}_${u.cefr}_3_1`, u.cefr, ttsLang, group3[0], items),
-            buildSelectExercise(`${courseId}_${u.cefr}_3_2`, u.cefr, ttsLang, group3[1], items),
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_3_3`, u.cefr, ttsLang, group3[2], items),
+            buildSelectExercise(`${courseId}_${u.cefr}_3_1`, courseId, u.cefr, ttsLang, group3[0], items),
+            buildSelectExercise(`${courseId}_${u.cefr}_3_2`, courseId, u.cefr, ttsLang, group3[1], items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_3_3`, courseId, u.cefr, ttsLang, group3[2], items),
             buildListeningExercise(`${courseId}_${u.cefr}_3_4`, u.cefr, ttsLang, group3[3], items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_3_5`, u.cefr, ttsLang, group3[1], items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_3_6`, u.cefr, ttsLang, group3[2], items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_3_5`, courseId, u.cefr, ttsLang, group3[1], items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_3_6`, courseId, u.cefr, ttsLang, group3[2], items),
             buildSpeakingExercise(`${courseId}_${u.cefr}_3_7`, u.cefr, ttsLang, group3[0]),
             buildMatchExercise(`${courseId}_${u.cefr}_3_8`, u.cefr, ttsLang, [
               group3[0],
@@ -479,24 +525,24 @@ export function buildCEFRCurriculum(
           cefr: u.cefr,
           icon: '⚡',
           title: {
-            ar: `${u.cefr} • الدرس 4: الدقة اللغوية والقواعد`,
+            ar: courseId === 'fusha' ? `${u.cefr} • الدرس 4: الدقة النحوية والصرفية` : `${u.cefr} • الدرس 4: الدقة اللغوية والقواعد`,
             fr: `${u.cefr} • Leçon 4 : Précision & Grammaire`,
             en: `${u.cefr} • Lesson 4: Nuance & Grammar`,
           },
           subtitle: {
-            ar: '8 تمارين • إتقان التراكيب الدقيقة',
+            ar: courseId === 'fusha' ? '8 تمارين • إتقان الإعراب والتراكيب الدقيقة' : '8 تمارين • إتقان التراكيب الدقيقة',
             fr: '8 exercices • Maîtrise grammaticale',
             en: '8 exercises • Precision & active production',
           },
           xpReward: 25,
           gemReward: 15,
           exercises: [
-            buildSelectExercise(`${courseId}_${u.cefr}_4_1`, u.cefr, ttsLang, group4[2], items),
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_4_2`, u.cefr, ttsLang, group4[3], items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_4_3`, u.cefr, ttsLang, group4[2], items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_4_4`, u.cefr, ttsLang, group4[3], items),
+            buildSelectExercise(`${courseId}_${u.cefr}_4_1`, courseId, u.cefr, ttsLang, group4[2], items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_4_2`, courseId, u.cefr, ttsLang, group4[3], items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_4_3`, courseId, u.cefr, ttsLang, group4[2], items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_4_4`, courseId, u.cefr, ttsLang, group4[3], items),
             buildListeningExercise(`${courseId}_${u.cefr}_4_5`, u.cefr, ttsLang, group4[1], items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_4_6`, u.cefr, ttsLang, group4[3], items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_4_6`, courseId, u.cefr, ttsLang, group4[3], items),
             buildSpeakingExercise(`${courseId}_${u.cefr}_4_7`, u.cefr, ttsLang, group4[2]),
             buildMatchExercise(`${courseId}_${u.cefr}_4_8`, u.cefr, ttsLang, [
               group4[0],
@@ -515,7 +561,7 @@ export function buildCEFRCurriculum(
           cefr: u.cefr,
           icon: '🎙️',
           title: {
-            ar: `${u.cefr} • ورشة الطلاقة الصوتية 2`,
+            ar: courseId === 'fusha' ? `${u.cefr} • ورشة الطلاقة والفصاحة 2` : `${u.cefr} • ورشة الطلاقة الصوتية 2`,
             fr: `${u.cefr} • Atelier Fluidité Orale 2`,
             en: `${u.cefr} • Fluency Mic Lab 2`,
           },
@@ -543,7 +589,7 @@ export function buildCEFRCurriculum(
           cefr: u.cefr,
           icon: '🔄',
           title: {
-            ar: `${u.cefr} • المراجعة الشاملة للوحدة`,
+            ar: courseId === 'fusha' ? `${u.cefr} • المراجعة الشاملة للوحدة وقواعدها` : `${u.cefr} • المراجعة الشاملة للوحدة`,
             fr: `${u.cefr} • Révision Globale de l'Unité`,
             en: `${u.cefr} • Full Unit Revision`,
           },
@@ -555,14 +601,14 @@ export function buildCEFRCurriculum(
           xpReward: 32,
           gemReward: 20,
           exercises: [
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_rv_1`, u.cefr, ttsLang, at(0), items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_rv_1`, courseId, u.cefr, ttsLang, at(0), items),
             buildListeningExercise(`${courseId}_${u.cefr}_rv_2`, u.cefr, ttsLang, at(2), items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_rv_3`, u.cefr, ttsLang, at(3), items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_rv_4`, u.cefr, ttsLang, at(5), items),
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_rv_5`, u.cefr, ttsLang, at(7), items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_rv_3`, courseId, u.cefr, ttsLang, at(3), items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_rv_4`, courseId, u.cefr, ttsLang, at(5), items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_rv_5`, courseId, u.cefr, ttsLang, at(7), items),
             buildListeningExercise(`${courseId}_${u.cefr}_rv_6`, u.cefr, ttsLang, at(9), items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_rv_7`, u.cefr, ttsLang, at(10), items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_rv_8`, u.cefr, ttsLang, at(11), items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_rv_7`, courseId, u.cefr, ttsLang, at(10), items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_rv_8`, courseId, u.cefr, ttsLang, at(11), items),
             buildSpeakingExercise(`${courseId}_${u.cefr}_rv_9`, u.cefr, ttsLang, at(8)),
             buildMatchExercise(`${courseId}_${u.cefr}_rv_10`, u.cefr, ttsLang, [
               at(1),
@@ -593,17 +639,17 @@ export function buildCEFRCurriculum(
           xpReward: 55,
           gemReward: 35,
           exercises: [
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_lg_1`, u.cefr, ttsLang, at(1), items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_lg_2`, u.cefr, ttsLang, at(2), items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_lg_1`, courseId, u.cefr, ttsLang, at(1), items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_lg_2`, courseId, u.cefr, ttsLang, at(2), items),
             buildListeningExercise(`${courseId}_${u.cefr}_lg_3`, u.cefr, ttsLang, at(4), items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_lg_4`, u.cefr, ttsLang, at(5), items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_lg_4`, courseId, u.cefr, ttsLang, at(5), items),
             buildSpeakingExercise(`${courseId}_${u.cefr}_lg_5`, u.cefr, ttsLang, at(3)),
-            buildReverseSelectExercise(`${courseId}_${u.cefr}_lg_6`, u.cefr, ttsLang, at(6), items),
-            buildWordBankExercise(`${courseId}_${u.cefr}_lg_7`, u.cefr, ttsLang, at(8), items),
+            buildReverseSelectExercise(`${courseId}_${u.cefr}_lg_6`, courseId, u.cefr, ttsLang, at(6), items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_lg_7`, courseId, u.cefr, ttsLang, at(8), items),
             buildListeningExercise(`${courseId}_${u.cefr}_lg_8`, u.cefr, ttsLang, at(10), items),
-            buildFillBlankExercise(`${courseId}_${u.cefr}_lg_9`, u.cefr, ttsLang, at(9), items),
+            buildFillBlankExercise(`${courseId}_${u.cefr}_lg_9`, courseId, u.cefr, ttsLang, at(9), items),
             buildSpeakingExercise(`${courseId}_${u.cefr}_lg_10`, u.cefr, ttsLang, at(11)),
-            buildWordBankExercise(`${courseId}_${u.cefr}_lg_11`, u.cefr, ttsLang, at(11), items),
+            buildWordBankExercise(`${courseId}_${u.cefr}_lg_11`, courseId, u.cefr, ttsLang, at(11), items),
             buildMatchExercise(`${courseId}_${u.cefr}_lg_12`, u.cefr, ttsLang, [
               at(0),
               at(3),

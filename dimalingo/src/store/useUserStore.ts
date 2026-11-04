@@ -59,7 +59,7 @@ export function createDefaultState(): UserState {
     equippedOutfit: 'classic',
     unlockedOutfits: ['classic'],
     completedNodes: {},
-    unlockedUnitNumber: { en: 1, fr: 1, es: 1, darija: 1 },
+    unlockedUnitNumber: { fusha: 1, en: 1, fr: 1, es: 1, darija: 1 },
     claimedChests: [],
     claimedDailyQuests: [],
     wordMemories: {},
