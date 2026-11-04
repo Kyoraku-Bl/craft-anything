@@ -136,13 +136,13 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({ uiLang }) => {
           <div className="flex items-center gap-2.5 text-duo-blue font-black text-base">
             <Volume2 className="w-5 h-5" />
             {uiLang === 'ar'
-              ? '2. محرك الصوت والمايكروفون (Web Speech + AnalyserNode)'
-              : '2. Live Mic Waveform & Pronunciation Scorer'}
+              ? '2. محرك الصوت والمايكروفون (Web Speech)'
+              : '2. Speech Recognition & Pronunciation Practice'}
           </div>
           <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
             {uiLang === 'ar'
-              ? 'كيجمع بين SpeechSynthesis للنطق العادي والبطيء (0.62x 🐢)، و MediaRecorder لسماع صوتك، و SpeechRecognition + خوارزمية Levenshtein لتقييم نطق كل كلمة!'
-              : 'Combines SpeechSynthesis, MediaRecorder voice playback, Web Audio frequency bars, and Levenshtein fuzzy scoring at $0 API cost!'}
+              ? 'التطبيق كيستعمل خدمة التعرف على الكلام ديال المتصفح ويقارن النص بالجملة. بعض المتصفحات كتحتاج الإنترنت أو ما كتدعمش هاد الخدمة؛ فهاد الحالة التسجيل كيسمح غير بسماع الصوت.'
+              : 'Speech recognition uses your browser’s service and compares its transcript with the sentence. It may require internet or be unavailable in some browsers; recording-only mode does not provide a score.'}
           </p>
           <button
             type="button"

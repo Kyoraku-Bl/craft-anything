@@ -115,8 +115,7 @@ export const LessonPlayer: React.FC<LessonPlayerProps> = ({
       currentExercise &&
       currentExercise.targetText &&
       (currentExercise.type === 'select_meaning' ||
-        currentExercise.type === 'listening' ||
-        currentExercise.type === 'speaking')
+        currentExercise.type === 'listening')
     ) {
       const timer = setTimeout(() => {
         sound.speak(

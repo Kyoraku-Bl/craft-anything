@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  CheckCircle2,
   ExternalLink,
   Headphones,
   Mic,
@@ -34,11 +33,13 @@ interface SpeechRecognitionLike {
   interimResults: boolean;
   continuous: boolean;
   maxAlternatives: number;
+  onstart: (() => void) | null;
   onresult: ((e: SpeechRecognitionEventLike) => void) | null;
   onerror: ((e: SpeechRecognitionErrorEventLike) => void) | null;
   onend: (() => void) | null;
   start: () => void;
   stop: () => void;
+  abort?: () => void;
 }
 
 interface PronunciationRecorderProps {
@@ -64,257 +65,219 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   onEvaluated,
   onSkipMic,
 }) => {
-  const [isRecording, setIsRecording] = useState(false);
+  type Phase = 'idle' | 'starting' | 'listening' | 'stopping' | 'recording';
+  const [phase, setPhase] = useState<Phase>('idle');
   const [liveTranscript, setLiveTranscript] = useState('');
   const [evaluation, setEvaluation] = useState<PronunciationEvaluation | null>(null);
   const [micWarning, setMicWarning] = useState<string | null>(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
-  const [bars, setBars] = useState<number[]>(Array(14).fill(14));
-
   const recRef = useRef<SpeechRecognitionLike | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const animFrameRef = useRef<number | null>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const latestTranscriptRef = useRef<string>('');
+  const audioUrlRef = useRef<string | null>(null);
+  const latestTranscriptRef = useRef('');
+  // Invalidates callbacks and pending getUserMedia requests on phrase change/unmount.
+  const sessionRef = useRef(0);
+  const busyRef = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearWatchdog = () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); timeoutRef.current = null; };
+  const isRecording = phase !== 'idle';
 
-  const cleanupAudioCapture = () => {
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
-    if (
-      mediaRecorderRef.current &&
-      mediaRecorderRef.current.state !== 'inactive'
-    ) {
-      try {
-        mediaRecorderRef.current.stop();
-      } catch {
-        // Ignore
-      }
-    }
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((tr) => tr.stop());
-      mediaStreamRef.current = null;
-    }
-    if (audioCtxRef.current) {
-      audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
-    }
-    setBars(Array(14).fill(14));
+  const message = (ar: string, fr: string, en: string) => uiLang === 'ar' ? ar : uiLang === 'fr' ? fr : en;
+  const releaseStream = () => {
+    mediaStreamRef.current?.getTracks().forEach(track => track.stop());
+    mediaStreamRef.current = null;
   };
-
+  const clearRecording = () => {
+    if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+    audioUrlRef.current = null;
+    setRecordedAudioUrl(null);
+  };
   useEffect(() => {
+    setPhase('idle');
     setLiveTranscript('');
     setEvaluation(null);
     setMicWarning(null);
+    setRecordedAudioUrl(null);
     latestTranscriptRef.current = '';
-    setRecordedAudioUrl((prev) => {
-      if (prev) URL.revokeObjectURL(prev);
-      return null;
-    });
     return () => {
-      cleanupAudioCapture();
-      if (recRef.current) {
-        try {
-          recRef.current.stop();
-        } catch {
-          // Ignore
-        }
+      clearWatchdog();
+      sessionRef.current++;
+      busyRef.current = false;
+      const rec = recRef.current;
+      recRef.current = null;
+      if (rec) {
+        rec.onstart = null; rec.onresult = null; rec.onerror = null; rec.onend = null;
+        try { if (rec.abort) rec.abort(); else rec.stop(); } catch { /* already stopped */ }
       }
+      const recorder = mediaRecorderRef.current;
+      mediaRecorderRef.current = null;
+      if (recorder && recorder.state !== 'inactive') {
+        recorder.onstop = null;
+        try { recorder.stop(); } catch { /* already stopped */ }
+      }
+      releaseStream();
+      if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
     };
-  }, [targetSentence]);
+  }, [targetSentence, audioLang]);
 
   const finalizeEvaluation = (finalText: string) => {
     const clean = finalText.trim();
     if (!clean) return;
-    const evalResult = scorePronunciation(clean, targetSentence, [
-      audioText,
-      ...acceptedAnswers,
-    ]);
+    const evalResult = scorePronunciation(clean, targetSentence, [audioText, ...acceptedAnswers]);
     setEvaluation(evalResult);
     onEvaluated(clean, evalResult);
   };
 
-  const startLiveWaveformAndRecorder = async () => {
-    if (!navigator.mediaDevices?.getUserMedia) return;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStreamRef.current = stream;
-
-      // Record user's own voice for playback comparison (supports audio/mp4 on iOS & audio/webm on Android/Desktop)!
-      if (typeof MediaRecorder !== 'undefined') {
-        const chunks: BlobPart[] = [];
-        const mr = new MediaRecorder(stream);
-        mediaRecorderRef.current = mr;
-        mr.ondataavailable = (ev) => {
-          if (ev.data.size > 0) chunks.push(ev.data);
-        };
-        mr.onstop = () => {
-          if (chunks.length > 0) {
-            const mime = mr.mimeType || 'audio/mp4';
-            const blob = new Blob(chunks, { type: mime });
-            const url = URL.createObjectURL(blob);
-            setRecordedAudioUrl((prev) => {
-              if (prev) URL.revokeObjectURL(prev);
-              return url;
-            });
-          }
-        };
-        mr.start();
-      }
-
-      // Live Web Audio frequency bars
-      const AudioCtx =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      if (AudioCtx) {
-        const ctx = new AudioCtx();
-        audioCtxRef.current = ctx;
-        const source = ctx.createMediaStreamSource(stream);
-        const analyser = ctx.createAnalyser();
-        analyser.fftSize = 64;
-        source.connect(analyser);
-        const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-        const tick = () => {
-          analyser.getByteFrequencyData(dataArray);
-          const nextBars = Array.from({ length: 14 }, (_, idx) => {
-            const val = dataArray[idx + 1] || 0;
-            return Math.max(12, Math.min(100, Math.round((val / 255) * 100)));
-          });
-          setBars(nextBars);
-          animFrameRef.current = requestAnimationFrame(tick);
-        };
-        tick();
-      }
-    } catch {
-      // Mic permission blocked (e.g., sandboxed iframe)
-      setMicWarning(
-        uiLang === 'ar'
-          ? 'تنبيه: المتصفح أو نافذة المعاينة حابس صلاحية المايكروفون. تقدر تفتح التطبيق فصفحة مستقلة ↗ أو تدرب بالنطق الذاتي لتحت!'
-          : uiLang === 'fr'
-          ? 'Accès micro restreint dans cet aperçu. Ouvrez dans un nouvel onglet ↗ ou validez votre prononciation ci-dessous !'
-          : 'Mic access is restricted in this frame. Open in a new tab ↗ for full mic capture, or use Shadow Self-Check below!'
-      );
+  const errorMessage = (error?: string) => {
+    switch (error) {
+      case 'not-allowed':
+      case 'service-not-allowed':
+        return message('المايكروفون أو خدمة التعرف على الكلام ما عندهاش الإذن. سمح بالمايكروفون فإعدادات الموقع والجهاز، وجرب تفتح الرابط مباشرة فـ Chrome أو Safari.', 'Autorisez le microphone et la reconnaissance vocale dans les réglages du site et de l’appareil. Essayez directement dans Chrome ou Safari.', 'Allow microphone and speech recognition access in your site and device settings. Try opening the site directly in Chrome or Safari.');
+      case 'audio-capture':
+        return message('ما لقيناش المايكروفون أو راه مستعمل من تطبيق آخر. تأكد من المايك وجرب مرة أخرى.', 'Microphone introuvable ou utilisé par une autre application. Vérifiez-le et réessayez.', 'No microphone is available, or another app is using it. Check your microphone and try again.');
+      case 'network':
+        return message('خدمة التعرف على الصوت ما قدرتش تتصل. تأكد من الإنترنت وجرب مرة أخرى.', 'Le service de reconnaissance vocale est inaccessible. Vérifiez votre connexion et réessayez.', 'The speech recognition service could not connect. Check your internet and try again.');
+      case 'language-not-supported':
+        return message('المتصفح ما كيدعمش التعرف على هاد اللغة. جرب Chrome أو Safari محدّث.', 'Cette langue n’est pas prise en charge par le navigateur. Essayez Chrome ou Safari à jour.', 'This browser does not support speech recognition for this language. Try an up-to-date Chrome or Safari.');
+      case 'no-speech':
+        return message('ما سمعنا حتى كلام. سمح بالمايكروفون، قرّب ليه وعاود هضر من بعد ما يظهر «كنسمع ليك».', 'Aucune parole détectée. Autorisez le micro et parlez après le message « Je vous écoute ».', 'No speech was detected. Allow microphone access and speak after the listening message appears.');
+      default:
+        return message('ما خدمش التعرف على الصوت. جرب مرة أخرى، وتأكد من الإذن والإنترنت أو افتح الموقع فـ Chrome أو Safari.', 'La reconnaissance vocale a échoué. Réessayez, vérifiez les autorisations et la connexion, ou ouvrez le site dans Chrome ou Safari.', 'Speech recognition failed. Retry, check permissions and internet, or open the site in Chrome or Safari.');
     }
   };
 
-  const handleToggleMic = async () => {
+  const handleToggleMic = () => {
     if (disabled) return;
-
-    if (isRecording) {
-      setIsRecording(false);
-      cleanupAudioCapture();
-      if (recRef.current) {
-        try {
-          recRef.current.stop();
-        } catch {
-          // Ignore
-        }
-      }
-      if (latestTranscriptRef.current) {
-        finalizeEvaluation(latestTranscriptRef.current);
+    if (busyRef.current) {
+      if (recRef.current && phase !== 'stopping') {
+        // Results can arrive after stop(); only onend may score them.
+        setPhase('stopping');
+        const rec = recRef.current;
+        clearWatchdog();
+        timeoutRef.current = setTimeout(() => {
+          if (recRef.current === rec) {
+            sessionRef.current++; recRef.current = null; busyRef.current = false; setPhase('idle');
+            try { rec.abort?.(); } catch { /* already stopped */ }
+            setMicWarning(errorMessage());
+          }
+        }, 5000);
+        try { rec.stop(); } catch { /* watchdog recovers if onend never arrives */ }
+      } else if (mediaRecorderRef.current && phase === 'recording') {
+        setPhase('idle');
+        busyRef.current = false;
+        const recorder = mediaRecorderRef.current;
+        mediaRecorderRef.current = null;
+        try { if (recorder.state !== 'inactive') recorder.stop(); } catch { /* already stopped */ }
+        releaseStream();
       }
       return;
     }
 
+    const session = ++sessionRef.current;
+    busyRef.current = true;
+    setPhase('starting');
     setMicWarning(null);
     setLiveTranscript('');
+    setEvaluation(null);
     latestTranscriptRef.current = '';
+    clearRecording();
+    // Prevent the prompt or its delayed speech from being transcribed as the answer.
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 
     const win = window as unknown as {
       SpeechRecognition?: new () => SpeechRecognitionLike;
       webkitSpeechRecognition?: new () => SpeechRecognitionLike;
     };
     const SpeechRec = win.SpeechRecognition || win.webkitSpeechRecognition;
-    const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-    const isIOSDevice =
-      /iPad|iPhone|iPod/.test(ua) ||
-      (typeof navigator !== 'undefined' &&
-        navigator.platform === 'MacIntel' &&
-        navigator.maxTouchPoints > 1);
-
     if (!SpeechRec) {
-      await startLiveWaveformAndRecorder();
-      setIsRecording(true);
-      setMicWarning(
-        uiLang === 'ar'
-          ? 'متصفحك كيسجل صوتك مباشرة! انطق الجملة بوضوح ثم اضغط إيقاف لسماع صوتك وتأكيد النطق.'
-          : 'Recording your voice! Speak clearly, then tap Stop to listen back and verify.'
-      );
+      // Recording is only a listen-back fallback, not speech recognition or a score.
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+        busyRef.current = false; setPhase('idle');
+        setMicWarning(message('هاد المتصفح ما كيدعمش التعرف على الصوت. فتح الموقع مباشرة فـ Chrome على Android أو Safari على iPhone، وسمح بالمايكروفون.', 'Ce navigateur ne prend pas en charge la reconnaissance vocale. Ouvrez le site dans Chrome sur Android ou Safari sur iPhone et autorisez le micro.', 'This browser does not support speech recognition. Open the site in Chrome on Android or Safari on iPhone and allow the microphone.'));
+        return;
+      }
+      setMicWarning(message('هاد المتصفح ما كيدعمش التعرف التلقائي. إلا سمحتي بالمايك، التسجيل غادي يكون للاستماع فقط. للتقييم افتح الموقع فـ Chrome أو Safari.', 'La reconnaissance vocale est indisponible : si vous autorisez le micro, l’enregistrement servira uniquement à l’écoute. Pour l’évaluation, utilisez Chrome ou Safari.', 'Speech recognition is unavailable here. If you allow microphone access, recording is for playback only. For scoring, use Chrome or Safari.'));
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        if (session !== sessionRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
+        mediaStreamRef.current = stream;
+        try {
+          const recorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = recorder;
+          const chunks: BlobPart[] = [];
+          recorder.ondataavailable = event => { if (event.data.size) chunks.push(event.data); };
+          recorder.onstop = () => {
+            if (session !== sessionRef.current || !chunks.length) return;
+            const url = URL.createObjectURL(new Blob(chunks, { type: recorder.mimeType || 'audio/webm' }));
+            if (audioUrlRef.current) URL.revokeObjectURL(audioUrlRef.current);
+            audioUrlRef.current = url;
+            setRecordedAudioUrl(url);
+          };
+          recorder.start();
+          setPhase('recording');
+          setMicWarning(message('المتصفح ما كيدعمش التعرف التلقائي على الكلام. يمكن لك تسجّل وتسمع صوتك فقط؛ للتقييم افتح الموقع فـ Chrome أو Safari.', 'La reconnaissance automatique est indisponible : vous pouvez seulement enregistrer et écouter. Pour l’évaluation, ouvrez le site dans Chrome ou Safari.', 'Automatic recognition is unavailable here: you can only record and listen back. For scoring, open the site in Chrome or Safari.'));
+        } catch {
+          releaseStream(); mediaRecorderRef.current = null; busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage('audio-capture'));
+        }
+      }).catch((err: DOMException) => {
+        if (session !== sessionRef.current) return;
+        busyRef.current = false; setPhase('idle');
+        setMicWarning(message('هاد المتصفح ما كيدعمش التعرف التلقائي، والتسجيل ما خدمش. افتح الموقع مباشرة فـ Chrome أو Safari وتأكد من إذن المايكروفون.', 'La reconnaissance vocale est indisponible et l’enregistrement a échoué. Ouvrez le site directement dans Chrome ou Safari et vérifiez l’autorisation du micro.', 'Speech recognition is unavailable and recording failed. Open the site directly in Chrome or Safari and check microphone permissions.') + ' ' + errorMessage(err?.name === 'NotAllowedError' || err?.name === 'SecurityError' ? 'not-allowed' : 'audio-capture'));
+      });
       return;
     }
 
-    // On iOS WebKit, SpeechRecognition.start() must execute synchronously inside user tap
-    // without competing with a simultaneous getUserMedia stream!
-    if (!isIOSDevice) {
-      startLiveWaveformAndRecorder().catch(() => {});
-    } else {
-      const pulse = () => {
-        setBars(
-          Array.from({ length: 14 }, () => Math.floor(22 + Math.random() * 68))
-        );
-        animFrameRef.current = requestAnimationFrame(pulse);
-      };
-      pulse();
-    }
-
+    // SpeechRecognition owns the microphone. A simultaneous getUserMedia capture
+    // can compete for it (especially on mobile), so never start one in this mode.
     try {
       const rec = new SpeechRec();
       recRef.current = rec;
-      rec.lang = isIOSDevice && audioLang === 'ar-MA' ? 'ar-SA' : audioLang;
+      const ua = navigator.userAgent;
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      rec.lang = isIOS && audioLang === 'ar-MA' ? 'ar-SA' : audioLang;
       rec.interimResults = true;
       rec.continuous = false;
-      rec.maxAlternatives = 2;
-
-      setIsRecording(true);
-
-      rec.onresult = (event) => {
-        let combined = '';
-        for (let i = 0; i < event.results.length; i++) {
-          combined += (event.results[i]?.[0]?.transcript || '') + ' ';
-        }
-        const trimmed = combined.trim();
-        latestTranscriptRef.current = trimmed;
-        setLiveTranscript(trimmed);
+      rec.maxAlternatives = 1;
+      let failed = false;
+      rec.onstart = () => { if (session === sessionRef.current) { clearWatchdog(); setPhase('listening'); } };
+      rec.onresult = event => {
+        if (session !== sessionRef.current) return;
+        const text = Array.from(event.results, result => result[0]?.transcript || '').join(' ').trim();
+        latestTranscriptRef.current = text;
+        setLiveTranscript(text);
       };
-
-      rec.onerror = (err) => {
-        setIsRecording(false);
-        cleanupAudioCapture();
-        if (err?.error === 'not-allowed' || err?.error === 'service-not-allowed') {
-          setMicWarning(
-            uiLang === 'ar'
-              ? 'صلاحية المايكروفون محبوسة فهاد النافذة المدمجة. افتح التطبيق فصفحة جديدة ↗ أو استعمل زر «نطقتها بصوتي»!'
-              : 'Microphone permission blocked in embedded frame. Open in a new tab ↗ or use Shadow Self-Check!'
-          );
-        }
+      rec.onerror = event => {
+        if (session !== sessionRef.current) return;
+        failed = true;
+        clearWatchdog();
+        sessionRef.current++;
+        recRef.current = null;
+        busyRef.current = false;
+        setPhase('idle');
+        setMicWarning(errorMessage(event.error));
+        try { rec.abort?.(); } catch { /* already stopped */ }
       };
-
       rec.onend = () => {
-        setIsRecording(false);
-        cleanupAudioCapture();
-        if (latestTranscriptRef.current) {
-          finalizeEvaluation(latestTranscriptRef.current);
-        }
+        if (session !== sessionRef.current || recRef.current !== rec) return;
+        clearWatchdog();
+        recRef.current = null;
+        busyRef.current = false;
+        setPhase('idle');
+        if (!failed && latestTranscriptRef.current) finalizeEvaluation(latestTranscriptRef.current);
+        else if (!failed) setMicWarning(errorMessage('no-speech'));
       };
-
+      // Keep start in the original user gesture, as required by mobile browsers.
+      timeoutRef.current = setTimeout(() => {
+        if (session !== sessionRef.current || recRef.current !== rec) return;
+        sessionRef.current++; recRef.current = null; busyRef.current = false; setPhase('idle');
+        try { rec.abort?.(); } catch { /* already stopped */ }
+        setMicWarning(errorMessage());
+      }, 15000);
       rec.start();
     } catch {
-      setIsRecording(false);
-      cleanupAudioCapture();
+      clearWatchdog(); recRef.current = null; busyRef.current = false; setPhase('idle'); setMicWarning(errorMessage());
     }
-  };
-
-  const handleSelfCheck = () => {
-    sound.playTap();
-    const evalResult = scorePronunciation(targetSentence, targetSentence, [
-      targetSentence,
-    ]);
-    setLiveTranscript(targetSentence);
-    setEvaluation(evalResult);
-    onEvaluated(targetSentence, evalResult);
   };
 
   const playRecordedVoice = () => {
@@ -342,6 +305,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              disabled={isRecording}
               onClick={() => sound.speak(audioText, audioLang, false)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-duo-blue border-b-4 border-duo-blueDark text-white text-xs font-black active:translate-y-0.5"
             >
@@ -350,6 +314,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             </button>
             <button
               type="button"
+              disabled={isRecording}
               onClick={() => sound.speak(audioText, audioLang, true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-duo-nightCard border-2 border-b-4 border-slate-300 dark:border-duo-nightBorder text-slate-700 dark:text-slate-200 text-xs font-black active:translate-y-0.5"
             >
@@ -360,12 +325,13 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         </div>
 
         {/* Interactive Word-by-Word Chips (Click any word to hear it individually!) */}
-        <div dir="ltr" className="flex flex-wrap items-center justify-center gap-2 pt-1">
+        <div dir={audioLang.startsWith('ar') ? 'rtl' : 'ltr'} className="flex flex-wrap items-center justify-center gap-2 pt-1">
           {evaluation
             ? evaluation.wordResults.map((wr, idx) => (
                 <button
                   key={`${wr.word}-${idx}`}
                   type="button"
+                  disabled={isRecording}
                   onClick={() => sound.speak(wr.word, audioLang, false)}
                   className={`px-3 py-1.5 rounded-xl border-2 font-black text-base sm:text-lg transition-all ${
                     wr.matched
@@ -381,6 +347,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
                 <button
                   key={`${w}-${idx}`}
                   type="button"
+                  disabled={isRecording}
                   onClick={() => sound.speak(w, audioLang, false)}
                   className="px-3 py-1.5 rounded-xl bg-white dark:bg-duo-nightCard border-2 border-slate-200 dark:border-duo-nightBorder hover:border-duo-blue text-slate-800 dark:text-slate-100 font-black text-base sm:text-lg transition-all"
                   title="Tap to hear word"
@@ -400,21 +367,15 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
       {/* Live Microphone Waveform & Capture Controls */}
       <div className="flex flex-col items-center gap-3">
         {isRecording && (
-          <div className="h-12 px-5 py-2 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center justify-center gap-1.5">
-            {bars.map((heightPct, i) => (
-              <span
-                key={i}
-                className="w-1.5 rounded-full bg-duo-red transition-all duration-75"
-                style={{ height: `${Math.max(16, Math.round(heightPct * 0.36))}px` }}
-              />
-            ))}
-          </div>
+          <p role="status" aria-live="polite" className="text-sm font-bold text-rose-700 dark:text-rose-300 text-center">
+            {phase === 'starting' ? message('كنطلب إذن المايكروفون…', 'Demande d’accès au microphone…', 'Requesting microphone access…') : phase === 'stopping' ? message('كنحلّل الكلام…', 'Analyse en cours…', 'Processing speech…') : phase === 'recording' ? message('كنسجّل الصوت للاستماع فقط.', 'Enregistrement pour écoute uniquement.', 'Recording for playback only.') : message('كنسمع ليك، هضر دابا بوضوح.', 'Je vous écoute, parlez clairement.', 'Listening — speak clearly now.')}
+          </p>
         )}
 
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
-            disabled={disabled}
+            disabled={disabled || phase === 'stopping' || phase === 'starting'}
             onClick={handleToggleMic}
             className={`px-6 py-4 rounded-2xl border-b-4 font-black text-base flex items-center gap-2.5 shadow-md transition-all active:translate-y-0.5 ${
               isRecording
@@ -426,10 +387,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
               <>
                 <Square className="w-5 h-5 fill-current" />
                 {uiLang === 'ar'
-                  ? 'إيقاف وتحليل النطق'
+                  ? (phase === 'recording' ? 'إيقاف التسجيل' : 'إيقاف وتحليل النطق')
                   : uiLang === 'fr'
-                  ? 'Arrêter & Analyser'
-                  : 'Stop & Score Accent'}
+                  ? (phase === 'recording' ? 'Arrêter l’enregistrement' : 'Arrêter & analyser')
+                  : (phase === 'recording' ? 'Stop recording' : 'Stop & analyze')}
               </>
             ) : (
               <>
@@ -454,16 +415,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             </button>
           )}
 
-          {!disabled && !isRecording && (
-            <button
-              type="button"
-              onClick={handleSelfCheck}
-              className="px-4 py-4 rounded-2xl border-2 border-b-4 border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs sm:text-sm hover:bg-emerald-100 transition-all flex items-center gap-1.5"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              {t(UI_STRINGS.iSaidItCorrectly, uiLang)}
-            </button>
-          )}
+
         </div>
 
         {/* Live Transcript & Pronunciation Score */}
@@ -489,10 +441,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
                   }`}
                 >
                   {uiLang === 'ar'
-                    ? `دقة النطق: ${evaluation.score}%`
+                    ? `تطابق الكلام المتعرّف عليه: ${evaluation.score}%`
                     : uiLang === 'fr'
-                    ? `Score de prononciation : ${evaluation.score}%`
-                    : `Pronunciation Match: ${evaluation.score}%`}
+                    ? `Correspondance du texte reconnu : ${evaluation.score}%`
+                    : `Recognized text match: ${evaluation.score}%`}
                 </span>
               </div>
             )}
@@ -501,7 +453,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
 
         {/* Helpful Iframe / Browser Mic Permission Banner */}
         {micWarning && (
-          <div className="w-full max-w-lg p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold text-center space-y-2">
+          <div role="alert" className="w-full max-w-lg p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold text-center space-y-2">
             <p>{micWarning}</p>
             <a
               href={window.location.href}
@@ -511,9 +463,10 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             >
               <ExternalLink className="w-3.5 h-3.5" />
               {uiLang === 'ar'
-                ? 'فتح فصفحة مستقلة لتفعيل المايكروفون الكامل'
-                : 'Open in New Tab for Full Mic Access'}
+                ? 'فتح الموقع فصفحة مستقلة'
+                : uiLang === 'fr' ? 'Ouvrir dans un nouvel onglet' : 'Open in a new tab'}
             </a>
+            <p dir="ltr" className="break-all font-normal">{window.location.origin}</p>
           </div>
         )}
 
@@ -523,7 +476,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             onClick={onSkipMic}
             className="text-xs font-extrabold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 underline"
           >
-            {t(UI_STRINGS.cantSpeakNow, uiLang)}
+            {message('تخطي التمرين بلا تقييم الصوت', 'Passer sans évaluation vocale', 'Skip without speech evaluation')}
           </button>
         )}
       </div>
