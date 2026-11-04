@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr" data-accent="indigo">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Kyoraku Replay — منصة إعادة تاريخية وتداول تجريبي ببيانات حقيقية: NQ futures، NAS100USD، المؤشرات، الفوركس والذهب. مجانية 100%، محلية بالكامل.">
-  <meta name="theme-color" content="#0d1421">
-  <title>Kyoraku Replay — 100% مجاني · بيانات حقيقية</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23f7b955'/%3E%3Cpath d='M16 46V18h8v12l14-12h10L34 30l15 16H38L26 33v13z' fill='%230d1421'/%3E%3C/svg%3E">
+  <meta name="description" content="Kyoraku Replay — a modern, 100% free market replay and backtesting workspace with real MIT-licensed OHLCV data, trailing stops, partial closes, journal, analytics and English/Arabic UI.">
+  <meta name="theme-color" content="#070c18">
+  <title>Kyoraku Replay — 100% Free · Real Market Data</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop stop-color='%237c6cff'/%3E%3Cstop offset='1' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='16' fill='url(%23g)'/%3E%3Cpath d='M16 46V18h8v12l14-12h10L34 30l15 16H38L26 33v13z' fill='%2307101e'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -17,37 +17,47 @@
       <div class="brand-mark" aria-hidden="true">K</div>
       <div class="brand-text">
         <strong>KYORAKU REPLAY</strong>
-        <small data-i18n="tagline">إعادة السوق · تدرّب بلا مخاطرة</small>
+        <small data-i18n="tagline">Replay the market · practise without risk</small>
       </div>
-      <span class="free-badge" data-i18n="freeBadge">100% مجاني · بلا خطط مدفوعة · بلا حساب</span>
+      <span class="free-badge" data-i18n="freeBadge">100% free · No paid plans · No account</span>
     </div>
 
     <div class="replay-controls" role="group" aria-label="Replay controls">
-      <button id="btn-reset" class="icon-btn" data-i18n-title="reset" title="جلسة جديدة">⟲</button>
-      <button id="btn-rewind" class="icon-btn" data-i18n-title="rewind" title="رجوع 20 شمعة">⏪</button>
-      <button id="btn-prev" class="icon-btn" data-i18n-title="prev" title="شمعة لور">◀</button>
-      <button id="btn-play" class="btn-primary" data-i18n="play">▶ تشغيل</button>
-      <button id="btn-next" class="icon-btn" data-i18n-title="next" title="شمعة لقدام">▶</button>
-      <select id="sel-speed" class="select-compact" data-i18n-title="speed" title="السرعة">
-        <option value="0.5">0.5x</option>
-        <option value="1" selected>1x</option>
-        <option value="2">2x</option>
-        <option value="5">5x</option>
-        <option value="10">10x</option>
-        <option value="20">20x</option>
-        <option value="50">50x</option>
+      <button id="btn-reset" class="icon-btn" data-i18n-title="reset" title="New session">⟲</button>
+      <button id="btn-rewind" class="icon-btn" data-i18n-title="rewind" title="Rewind 20 bars">⏪</button>
+      <button id="btn-prev" class="icon-btn" data-i18n-title="prev" title="Prev bar">◀</button>
+      <button id="btn-play" class="btn-primary" data-i18n="play">▶ Play</button>
+      <button id="btn-next" class="icon-btn" data-i18n-title="next" title="Next bar">▶</button>
+      <select id="sel-speed" class="select-compact" data-i18n-title="speed" title="Speed">
+        <option value="0.5">0.5x</option><option value="1" selected>1x</option>
+        <option value="2">2x</option><option value="5">5x</option><option value="10">10x</option>
+        <option value="20">20x</option><option value="50">50x</option><option value="100">100x</option>
+        <option value="200">200x</option>
       </select>
-      <input type="datetime-local" id="input-goto" class="input-compact" data-i18n-title="goTo" title="اذهب إلى تاريخ">
-      <button id="btn-goto" class="btn" data-i18n="go">اذهب</button>
+      <input type="number" id="input-step-n" class="input-compact" min="1" max="500" value="10" data-i18n-title="stepN" title="Step N bars" style="max-width:64px">
+      <button id="btn-step-back" class="icon-btn" data-i18n-title="stepBack" title="Step back N bars">−</button>
+      <button id="btn-step-fwd" class="icon-btn" data-i18n-title="stepFwd" title="Step forward N bars">＋</button>
+      <input type="datetime-local" id="input-goto" class="input-compact" data-i18n-title="goTo" title="Go to date">
+      <button id="btn-goto" class="btn" data-i18n="go">Go</button>
     </div>
 
     <div class="status">
-      <div class="stat"><span data-i18n="clock">الوقت (UTC)</span><b id="stat-time">--</b></div>
-      <div class="stat"><span data-i18n="balance">الرصيد</span><b id="stat-balance">--</b></div>
-      <div class="stat"><span data-i18n="equity">القيمة</span><b id="stat-equity">--</b></div>
-      <div class="stat"><span data-i18n="dd">أقصى سحب</span><b id="stat-dd">--</b></div>
-      <button id="btn-lang" class="ghost-btn">English</button>
-      <button id="btn-help" class="ghost-btn" data-i18n="help">كيفاش خدام؟</button>
+      <div class="stat"><span data-i18n="clock">Time (UTC)</span><b id="stat-time">--</b></div>
+      <div class="stat"><span data-i18n="balance">Balance</span><b id="stat-balance">--</b></div>
+      <div class="stat"><span data-i18n="equity">Equity</span><b id="stat-equity">--</b></div>
+      <div class="stat"><span data-i18n="dd">Max DD</span><b id="stat-dd">--</b></div>
+      <div class="lang-switch" role="group" aria-label="Language">
+        <button id="btn-lang-en" class="lang-btn active" data-lang="en">EN</button>
+        <button id="btn-lang-ar" class="lang-btn" data-lang="ar">العربية</button>
+      </div>
+      <div class="accent-picker" role="group" aria-label="Accent colour">
+        <button class="accent-dot active" data-accent-value="indigo" style="--dot:#7c6cff" title="Indigo"></button>
+        <button class="accent-dot" data-accent-value="cyan" style="--dot:#22d3ee" title="Cyan"></button>
+        <button class="accent-dot" data-accent-value="violet" style="--dot:#b46cff" title="Violet"></button>
+        <button class="accent-dot" data-accent-value="emerald" style="--dot:#1fd39a" title="Emerald"></button>
+      </div>
+      <button id="btn-shortcuts" class="ghost-btn" data-i18n="shortcuts">⌨ Shortcuts</button>
+      <button id="btn-help" class="ghost-btn" data-i18n="help">How it works</button>
     </div>
   </header>
 
@@ -56,14 +66,36 @@
     <aside class="panel side-panel">
       <div class="panel-scroll">
         <section class="group">
-          <h3 data-i18n="market">السوق</h3>
-          <label class="field"><span data-i18n="symbol">الأصل</span><select id="sel-symbol"></select></label>
-          <label class="field"><span data-i18n="timeframe">الإطار الزمني</span><select id="sel-tf"></select></label>
+          <h3 data-i18n="market">Market</h3>
+          <label class="field"><span data-i18n="symbol">Symbol</span><select id="sel-symbol"></select></label>
+          <label class="field"><span data-i18n="timeframe">Timeframe</span><select id="sel-tf"></select></label>
           <div id="market-meta" class="market-meta">—</div>
         </section>
 
         <section class="group">
-          <h3 data-i18n="indicators">المؤشرات</h3>
+          <h3 data-i18n="display">Display &amp; layout</h3>
+          <label class="field"><span data-i18n="layout">Chart layout</span>
+            <select id="sel-layout">
+              <option value="single" data-i18n="layoutSingle">1 chart</option>
+              <option value="dual" selected data-i18n="layoutDual">2 charts (main + HTF)</option>
+              <option value="triple" data-i18n="layoutTriple">3 charts (multi-timeframe)</option>
+            </select>
+          </label>
+          <label class="field"><span data-i18n="thirdTf">Third chart timeframe</span><select id="sel-third-tf"></select></label>
+          <div class="field-row">
+            <input id="input-custom-tf" type="number" min="1" max="1440" value="7" data-i18n-title="customTf" title="Custom timeframe in minutes">
+            <button id="btn-add-tf" class="mini-btn" data-i18n="addTf">+ Custom TF</button>
+          </div>
+          <label class="check-line"><input type="checkbox" id="chk-pro-sessions" checked> <span data-i18n="sessionShading">Session shading (Asia / London / NY)</span></label>
+          <div class="legend">
+            <span><i style="background:rgba(124,108,255,.35)"></i>Asia</span>
+            <span><i style="background:rgba(34,211,238,.30)"></i>London</span>
+            <span><i style="background:rgba(251,191,92,.30)"></i>New York</span>
+          </div>
+        </section>
+
+        <section class="group">
+          <h3 data-i18n="indicators">Indicators</h3>
           <div class="check-grid">
             <label><input type="checkbox" id="ind-sma20" checked> SMA 20</label>
             <label><input type="checkbox" id="ind-sma50"> SMA 50</label>
@@ -71,57 +103,65 @@
             <label><input type="checkbox" id="ind-bollinger"> Bollinger</label>
             <label><input type="checkbox" id="ind-vwap"> VWAP</label>
             <label><input type="checkbox" id="ind-rsi"> RSI 14</label>
-            <label><input type="checkbox" id="ind-volume" checked> <span data-i18n="volume">الحجم</span></label>
+            <label><input type="checkbox" id="ind-volume" checked> <span data-i18n="volume">Volume</span></label>
+          </div>
+          <h3 style="margin-top:14px" data-i18n="proIndicators">Pro indicators</h3>
+          <div class="check-grid">
+            <label><input type="checkbox" id="ind-ema50"> EMA 50</label>
+            <label><input type="checkbox" id="ind-supertrend"> Supertrend</label>
+            <label><input type="checkbox" id="ind-macd"> MACD</label>
+            <label><input type="checkbox" id="ind-stoch"> Stochastic</label>
+            <label><input type="checkbox" id="ind-atr"> ATR bands</label>
           </div>
         </section>
 
         <section class="group">
-          <h3 data-i18n="session">إعدادات الجلسة</h3>
-          <label class="field"><span data-i18n="startBalance">رصيد البداية</span><input id="input-balance" type="number" min="1" step="100" value="10000"></label>
-          <label class="field"><span data-i18n="riskPct">المخاطرة لكل صفقة %</span><input id="input-risk" type="number" min="0.01" max="100" step="0.1" value="1"></label>
-          <label class="field"><span data-i18n="spread">السبريد (بيب)</span><input id="input-spread" type="number" min="0" max="1000" step="0.1" value="1"></label>
-          <label class="field"><span data-i18n="commission">عمولة / لوت</span><input id="input-commission" type="number" min="0" step="0.1" value="0"></label>
-          <label class="field"><span data-i18n="slPips">الوقف (بيب)</span><input id="input-slpips" type="number" min="0.1" step="1" value="20"></label>
-          <label class="field"><span data-i18n="rr">الهدف (R)</span><input id="input-rr" type="number" min="0.1" step="0.1" value="2"></label>
-          <label class="check-line"><input type="checkbox" id="chk-autobe" checked> <span data-i18n="autoBE">نقل الوقف لنقطة الدخول تلقائياً</span></label>
-          <label class="field"><span data-i18n="beR">عند بلوغ (R)</span><input id="input-ber" type="number" min="0.1" step="0.1" value="1"></label>
+          <h3 data-i18n="session">Session settings</h3>
+          <label class="field"><span data-i18n="startBalance">Starting balance</span><input id="input-balance" type="number" min="1" step="100" value="10000"></label>
+          <label class="field"><span data-i18n="riskPct">Risk per trade %</span><input id="input-risk" type="number" min="0.01" max="100" step="0.1" value="1"></label>
+          <label class="field"><span data-i18n="spread">Spread (pips)</span><input id="input-spread" type="number" min="0" max="1000" step="0.1" value="1"></label>
+          <label class="field"><span data-i18n="commission">Commission / lot</span><input id="input-commission" type="number" min="0" step="0.1" value="0"></label>
+          <label class="field"><span data-i18n="slPips">Stop (pips)</span><input id="input-slpips" type="number" min="0.1" step="1" value="20"></label>
+          <label class="field"><span data-i18n="rr">Target (R)</span><input id="input-rr" type="number" min="0.1" step="0.1" value="2"></label>
+          <label class="check-line"><input type="checkbox" id="chk-autobe" checked> <span data-i18n="autoBE">Auto break-even</span></label>
+          <label class="field"><span data-i18n="beR">Trigger at (R)</span><input id="input-ber" type="number" min="0.1" step="0.1" value="1"></label>
         </section>
 
         <section class="group">
-          <h3 data-i18n="advanced">إدارة متقدمة للصفقة</h3>
-          <label class="check-line strong"><input type="checkbox" id="chk-trail"> <span data-i18n="trailEnable">Trailing Stop · وقف متحرك</span></label>
+          <h3 data-i18n="advanced">Advanced trade management</h3>
+          <label class="check-line strong"><input type="checkbox" id="chk-trail"> <span data-i18n="trailEnable">Trailing Stop</span></label>
           <div id="trail-config" class="sub-group">
-            <label class="field"><span data-i18n="trailStart">يبدأ بعد (R)</span><input id="input-trail-start" type="number" min="0.1" step="0.1" value="1"></label>
-            <label class="field"><span data-i18n="trailDist">المسافة (بيب)</span><input id="input-trail-dist" type="number" min="0.1" step="1" value="20"></label>
+            <label class="field"><span data-i18n="trailStart">Activate after (R)</span><input id="input-trail-start" type="number" min="0.1" step="0.1" value="1"></label>
+            <label class="field"><span data-i18n="trailDist">Distance (pips)</span><input id="input-trail-dist" type="number" min="0.1" step="1" value="20"></label>
           </div>
-          <label class="check-line strong"><input type="checkbox" id="chk-autopartial"> <span data-i18n="autoPartial">إغلاق جزئي أوتوماتيكي</span></label>
+          <label class="check-line strong"><input type="checkbox" id="chk-autopartial"> <span data-i18n="autoPartial">Automatic partial close</span></label>
           <div id="partial-config" class="sub-group">
-            <label class="field"><span data-i18n="partialAt">عند بلوغ (R)</span><input id="input-partial-at" type="number" min="0.1" step="0.1" value="1"></label>
-            <label class="field"><span data-i18n="partialPct">نسبة الإغلاق %</span><input id="input-partial-pct" type="number" min="1" max="99" step="5" value="50"></label>
+            <label class="field"><span data-i18n="partialAt">Trigger at (R)</span><input id="input-partial-at" type="number" min="0.1" step="0.1" value="1"></label>
+            <label class="field"><span data-i18n="partialPct">Close %</span><input id="input-partial-pct" type="number" min="1" max="99" step="5" value="50"></label>
           </div>
-          <p class="tiny-note" data-i18n="advancedNote">الوقف المتحرك كيتحرك غير فاتجاه الربح، والإغلاق الجزئي كيولّي سطر مستقل فالدفتر مع R ديالو.</p>
+          <p class="tiny-note" data-i18n="advancedNote">Trailing only tightens in your favour. A partial close becomes its own journal row with its own R; rewind restores the size.</p>
         </section>
 
         <section class="group">
-          <label class="check-line strong"><input type="checkbox" id="chk-prop"> <span data-i18n="propEnable">محاكاة شروط شركة التمويل</span></label>
+          <label class="check-line strong"><input type="checkbox" id="chk-prop"> <span data-i18n="propEnable">Prop firm rule simulation</span></label>
           <div id="prop-config" class="sub-group">
-            <label class="field"><span data-i18n="target">هدف الربح %</span><input id="input-target" type="number" min="0.1" step="0.5" value="8"></label>
-            <label class="field"><span data-i18n="dailyLimit">خسارة يومية قصوى %</span><input id="input-daily" type="number" min="0.1" step="0.5" value="5"></label>
-            <label class="field"><span data-i18n="totalLimit">سحب كلي أقصى %</span><input id="input-total" type="number" min="0.1" step="0.5" value="10"></label>
-            <label class="field"><span data-i18n="minDays">أقل عدد أيام</span><input id="input-mindays" type="number" min="0" step="1" value="3"></label>
+            <label class="field"><span data-i18n="target">Profit target %</span><input id="input-target" type="number" min="0.1" step="0.5" value="8"></label>
+            <label class="field"><span data-i18n="dailyLimit">Max daily loss %</span><input id="input-daily" type="number" min="0.1" step="0.5" value="5"></label>
+            <label class="field"><span data-i18n="totalLimit">Max total DD %</span><input id="input-total" type="number" min="0.1" step="0.5" value="10"></label>
+            <label class="field"><span data-i18n="minDays">Min trading days</span><input id="input-mindays" type="number" min="0" step="1" value="3"></label>
           </div>
         </section>
 
         <section class="group">
-          <h3 data-i18n="archived">جلسات محفوظة</h3>
+          <h3 data-i18n="archived">Saved sessions</h3>
           <div class="btn-row">
-            <button id="btn-save-session" class="btn" data-i18n="saveSession">احفظ الجلسة</button>
-            <button id="btn-reset-session" class="btn" data-i18n="newSession">ابدأ جلسة فارغة</button>
+            <button id="btn-save-session" class="btn" data-i18n="saveSession">Save session</button>
+            <button id="btn-reset-session" class="btn" data-i18n="newSession">Start empty session</button>
           </div>
-          <label class="field"><span data-i18n="archived">جلسات محفوظة</span><select id="sel-archive"></select></label>
+          <label class="field"><span data-i18n="archived">Saved sessions</span><select id="sel-archive"></select></label>
           <div class="btn-row">
-            <button id="btn-open-archive" class="btn" data-i18n="open">افتح</button>
-            <button id="btn-del-archive" class="btn danger" data-i18n="del">حذف</button>
+            <button id="btn-open-archive" class="btn" data-i18n="open">Open</button>
+            <button id="btn-del-archive" class="btn danger" data-i18n="del">Delete</button>
           </div>
         </section>
       </div>
@@ -132,50 +172,74 @@
       <div class="chart-toolbar">
         <span id="chart-label" class="chart-label">--</span>
         <span id="data-source" class="source-badge">—</span>
-        <label class="inline-check"><input type="checkbox" id="chk-htf" checked> <span data-i18n="htfChart">شارت إطار أعلى</span></label>
+        <div class="chart-tools" role="group" aria-label="Drawing tools">
+          <button class="tool-btn active" data-tool="cursor" data-i18n-title="toolCursor" title="Cursor / pan">↖</button>
+          <button class="tool-btn" data-tool="hline" data-i18n-title="toolHline" title="Horizontal line">━</button>
+          <button class="tool-btn" data-tool="trend" data-i18n-title="toolTrend" title="Trend line">╱</button>
+          <button class="tool-btn" data-tool="rect" data-i18n-title="toolRect" title="Rectangle / zone">▭</button>
+          <button class="tool-btn" data-tool="fib" data-i18n-title="toolFib" title="Fibonacci retracement">F</button>
+          <button class="tool-btn" data-tool="text" data-i18n-title="toolText" title="Text note">T</button>
+          <button id="btn-undo-drawing" class="tool-btn" data-i18n-title="undoDrawing" title="Undo drawing">↶</button>
+          <button id="btn-clear-drawings" class="tool-btn" data-i18n-title="clearDrawings" title="Clear drawings">🗑</button>
+        </div>
+        <label class="inline-check"><input type="checkbox" id="chk-htf" checked> <span data-i18n="htfChart">Higher timeframe</span></label>
         <select id="sel-htf" class="select-compact"></select>
-        <label class="inline-check"><input type="checkbox" id="chk-trades" checked> <span data-i18n="showTrades">إظهار الصفقات</span></label>
-        <span class="hint" data-i18n="zoomHint">عجلة الفأرة = تكبير · السحب = تنقل</span>
+        <label class="inline-check"><input type="checkbox" id="chk-trades" checked> <span data-i18n="showTrades">Show trades</span></label>
+        <span class="hint" data-i18n="zoomHint">Wheel = zoom · Drag = pan</span>
       </div>
 
-      <div class="chart-box main-chart"><canvas id="chart-main"></canvas></div>
+      <div class="chart-box main-chart">
+        <canvas id="chart-main"></canvas>
+        <canvas id="chart-overlay"></canvas>
+      </div>
       <div class="chart-box htf-chart" id="htf-wrap"><canvas id="chart-htf"></canvas></div>
+      <div class="chart-box third-chart hidden" id="third-wrap"><canvas id="chart-third"></canvas></div>
+      <div class="pro-pane-wrap" id="pro-pane-wrap">
+        <div class="pane-head"><span data-i18n="proPane">MACD · Stochastic · ATR</span><span id="pro-pane-label">—</span></div>
+        <canvas id="chart-pro"></canvas>
+      </div>
 
       <div class="tabs">
         <div class="tabbar" role="tablist">
-          <button class="tab active" data-tab="journal" data-i18n="tabJournal">الدفتر</button>
-          <button class="tab" data-tab="analytics" data-i18n="tabAnalytics">التحليلات</button>
-          <button class="tab" data-tab="montecarlo" data-i18n="tabMonte">مونت كارلو</button>
-          <button class="tab" data-tab="propfirm" data-i18n="tabProp">شركة التمويل</button>
-          <button class="tab" data-tab="data" data-i18n="tabData">البيانات</button>
+          <button class="tab active" data-tab="journal" data-i18n="tabJournal">Journal</button>
+          <button class="tab" data-tab="analytics" data-i18n="tabAnalytics">Analytics</button>
+          <button class="tab" data-tab="montecarlo" data-i18n="tabMonte">Monte Carlo</button>
+          <button class="tab" data-tab="propfirm" data-i18n="tabProp">Prop firm</button>
+          <button class="tab" data-tab="strategies" data-i18n="tabStrategies">Strategies</button>
+          <button class="tab" data-tab="insights" data-i18n="tabInsights">Insights</button>
+          <button class="tab" data-tab="rrsim" data-i18n="tabRR">R:R simulator</button>
+          <button class="tab" data-tab="events" data-i18n="tabEvents">Events</button>
+          <button class="tab" data-tab="pending" data-i18n="tabPending">Orders</button>
+          <button class="tab" data-tab="data" data-i18n="tabData">Data</button>
         </div>
 
         <div class="tab-panel" data-panel="journal">
           <div class="panel-head">
             <select id="filter-session"></select>
             <select id="filter-side">
-              <option value="all" data-i18n="all">الكل</option>
-              <option value="buy">Long</option>
-              <option value="sell">Short</option>
+              <option value="all" data-i18n="all">All</option>
+              <option value="buy">Long</option><option value="sell">Short</option>
             </select>
             <select id="filter-result">
-              <option value="all" data-i18n="all">الكل</option>
-              <option value="win" data-i18n="winners">رابحة</option>
-              <option value="loss" data-i18n="losers">خاسرة</option>
+              <option value="all" data-i18n="all">All</option>
+              <option value="win" data-i18n="winners">Winners</option>
+              <option value="loss" data-i18n="losers">Losers</option>
             </select>
-            <input id="filter-text" type="search" data-i18n-placeholder="tagFilter" placeholder="ابحث في الوسوم/الملاحظات">
-            <button id="btn-export-csv" class="btn" data-i18n="exportCsv">تصدير CSV</button>
+            <select id="filter-strategy"></select>
+            <input id="filter-text" type="search" data-i18n-placeholder="tagFilter" placeholder="Search tags/notes">
+            <button id="btn-export-csv" class="btn" data-i18n="exportCsv">Export CSV</button>
           </div>
           <div class="table-wrap">
             <table class="journal-table">
               <thead><tr>
-                <th data-i18n="colId">#</th><th data-i18n="colSymbol">الأصل</th><th data-i18n="colSide">الاتجاه</th>
-                <th data-i18n="colEntry">الدخول</th><th data-i18n="colExit">الخروج</th><th data-i18n="colPnl">الربح/الخسارة</th>
-                <th data-i18n="colR">R</th><th data-i18n="colReason">السبب</th><th data-i18n="colNotes">ملاحظات / وسوم</th><th data-i18n="colAction"></th>
+                <th data-i18n="colId">#</th><th data-i18n="colSymbol">Symbol</th><th data-i18n="colSide">Side</th>
+                <th data-i18n="colEntry">Entry</th><th data-i18n="colExit">Exit</th><th data-i18n="colPnl">P&amp;L</th>
+                <th data-i18n="colR">R</th><th data-i18n="colReason">Reason</th><th data-i18n="colNotes">Notes / tags</th><th data-i18n="colAction"></th>
               </tr></thead>
               <tbody id="journal-body"></tbody>
             </table>
           </div>
+          <p class="tiny-note" data-i18n="journalHint">Click any row to open its review panel: strategy, checklist, screenshot and "jump to chart".</p>
         </div>
 
         <div class="tab-panel hidden" data-panel="analytics">
@@ -183,12 +247,12 @@
           <div id="analytics-content">
             <div class="kpi-grid" id="kpi-grid"></div>
             <div class="mini-grid">
-              <div class="mini"><h4 data-i18n="equityCurve">منحنى رأس المال</h4><canvas id="canvas-equity"></canvas></div>
-              <div class="mini"><h4 data-i18n="rDistribution">توزيع نتائج R</h4><canvas id="canvas-rhist"></canvas></div>
-              <div class="mini"><h4 data-i18n="hourlyPnl">الربح حسب الساعة (UTC)</h4><canvas id="canvas-hour"></canvas></div>
-              <div class="mini"><h4 data-i18n="weekdayPnl">الربح حسب اليوم</h4><canvas id="canvas-weekday"></canvas></div>
+              <div class="mini"><h4 data-i18n="equityCurve">Equity curve</h4><canvas id="canvas-equity"></canvas></div>
+              <div class="mini"><h4 data-i18n="rDistribution">R distribution</h4><canvas id="canvas-rhist"></canvas></div>
+              <div class="mini"><h4 data-i18n="hourlyPnl">P&amp;L by hour (UTC)</h4><canvas id="canvas-hour"></canvas></div>
+              <div class="mini"><h4 data-i18n="weekdayPnl">P&amp;L by weekday</h4><canvas id="canvas-weekday"></canvas></div>
             </div>
-            <h4 class="section-title" data-i18n="calendar">تقويم الربح والخسارة</h4>
+            <h4 class="section-title" data-i18n="calendar">P&amp;L calendar</h4>
             <div id="pnl-calendar" class="calendar"></div>
           </div>
         </div>
@@ -197,57 +261,114 @@
           <h4 class="section-title" data-i18n="mcTitle"></h4>
           <p class="note" data-i18n="mcNote"></p>
           <div class="inline-form">
-            <label><span data-i18n="mcTrades">عدد الصفقات</span><input id="mc-trades" type="number" min="1" max="5000" value="100"></label>
-            <label><span data-i18n="mcRuns">عدد المحاكاات</span><input id="mc-runs" type="number" min="10" max="5000" value="1000"></label>
-            <button id="btn-mc" class="btn-primary" data-i18n="mcRun">شغّل المحاكاة</button>
+            <label><span data-i18n="mcTrades">Trades</span><input id="mc-trades" type="number" min="1" max="5000" value="100"></label>
+            <label><span data-i18n="mcRuns">Simulations</span><input id="mc-runs" type="number" min="10" max="5000" value="1000"></label>
+            <button id="btn-mc" class="btn-primary" data-i18n="mcRun">Run simulation</button>
           </div>
           <div id="mc-results" class="kpi-grid"></div>
-          <div class="mini wide"><h4 data-i18n="mcFinal">توزيع النتيجة النهائية</h4><canvas id="canvas-mc"></canvas></div>
+          <div class="mini wide"><h4 data-i18n="mcFinal">Final outcome distribution</h4><canvas id="canvas-mc"></canvas></div>
         </div>
 
-        <div class="tab-panel hidden" data-panel="propfirm">
-          <div id="prop-card"></div>
+        <div class="tab-panel hidden" data-panel="propfirm"><div id="prop-card"></div></div>
+
+        <!-- Strategies -->
+        <div class="tab-panel hidden" data-panel="strategies">
+          <h4 class="section-title" data-i18n="strategyTitle">Strategy analytics</h4>
+          <p class="note" data-i18n="strategyNote">Group trades by setup and compare them. Assign a strategy from any journal row's review panel.</p>
+          <div class="tag-input-row">
+            <input id="input-strategy-name" data-i18n-placeholder="strategyPlaceholder" placeholder="New strategy name…">
+            <button id="btn-add-strategy" class="btn-primary" data-i18n="addStrategy">+ Add</button>
+          </div>
+          <div id="strategy-list" class="pro-list"></div>
+          <div id="strategy-table-wrap" style="margin-top:14px"></div>
         </div>
 
+        <!-- Insights -->
+        <div class="tab-panel hidden" data-panel="insights">
+          <h4 class="section-title" data-i18n="insightsTitle">Rule-based performance insights</h4>
+          <p class="note" data-i18n="insightsNote">Deterministic checks on your own trades — no AI, no network, no guesses. Patterns are hints, not signals.</p>
+          <div id="insights-content" class="pro-grid"></div>
+        </div>
+
+        <!-- RR simulator -->
+        <div class="tab-panel hidden" data-panel="rrsim">
+          <h4 class="section-title" data-i18n="rrTitle">What if you changed your target?</h4>
+          <p class="note" data-i18n="rrNote">Replays your closed trades against the loaded bars with a different target R, keeping the original stop and size. Stop is always checked before target in the same candle.</p>
+          <div class="pro-form">
+            <label><span data-i18n="rrTarget">New target (R)</span><input id="input-rr-target" type="number" min="0.1" max="20" step="0.1" value="3"></label>
+            <label><span data-i18n="rrStop">Stop multiplier</span><input id="input-rr-stop" type="number" min="0.2" max="5" step="0.1" value="1"></label>
+            <button id="btn-run-rr" class="btn-primary" data-i18n="rrRun">Simulate</button>
+          </div>
+          <div id="rr-results" class="kpi-grid"></div>
+          <div id="rr-detail" class="pro-grid"></div>
+        </div>
+
+        <!-- Events -->
+        <div class="tab-panel hidden" data-panel="events">
+          <h4 class="section-title" data-i18n="eventsTitle">Local economic calendar</h4>
+          <p class="note" data-i18n="eventsNote">Add your own historical events (from your broker, a CSV or a licensed calendar). They stay in this browser and appear as markers on the chart. No news feed is bundled.</p>
+          <div class="pro-form">
+            <label><span data-i18n="eventTime">Time (UTC)</span><input id="input-event-time" type="datetime-local"></label>
+            <label><span data-i18n="eventTitle">Event</span><input id="input-event-title" placeholder="CPI, FOMC, NFP…"></label>
+            <label><span data-i18n="eventImpact">Impact</span><select id="sel-event-impact"><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></label>
+            <button id="btn-add-event" class="btn-primary" data-i18n="addEvent">+ Add event</button>
+            <button id="btn-export-events" class="btn" data-i18n="exportEvents">Export</button>
+            <button id="btn-import-events" class="btn" data-i18n="importEvents">Import</button>
+          </div>
+          <label class="check-line"><input type="checkbox" id="chk-events-chart" checked> <span data-i18n="eventsOnChart">Show event markers on chart</span></label>
+          <div id="events-list" class="pro-list"></div>
+        </div>
+
+        <!-- Pending orders -->
+        <div class="tab-panel hidden" data-panel="pending">
+          <h4 class="section-title" data-i18n="pendingTitle">Working orders</h4>
+          <p class="note" data-i18n="pendingNote">Limit and stop entries are held locally and fill automatically when replayed price touches them. Bracket SL/TP is attached at fill.</p>
+          <div id="pending-list" class="pro-list"></div>
+          <button id="btn-cancel-pending" class="btn danger" data-i18n="cancelPending">Cancel all working orders</button>
+        </div>
+
+        <!-- Data -->
         <div class="tab-panel hidden" data-panel="data">
           <div class="data-columns">
             <div>
-              <h4 class="section-title" data-i18n="liveData">بيانات حقيقية مباشرة (اختياري)</h4>
-              <p class="note" data-i18n="liveNote">البيانات الحقيقية المدمجة كتخدم أوفلاين بلا حتى طلب على الإنترنت. إلى بغيتي تحديث حي، اختار الأصل واضغط «حمّل مباشر»: كيتمّ المرور من /api/ohlcv (Vercel) ولا من CORS relay عام. حتى شي مفتاح API.</p>
+              <h4 class="section-title" data-i18n="liveData">Optional live real data</h4>
+              <p class="note" data-i18n="liveNote"></p>
               <div class="inline-form">
-                <label><span data-i18n="liveAsset">الأصل</span><select id="sel-live-asset"></select></label>
-                <label><span data-i18n="liveInterval">الإطار</span><select id="sel-live-interval"></select></label>
-                <label><span data-i18n="liveRange">المدة</span><select id="sel-live-range"></select></label>
-                <button id="btn-load-live" class="btn-primary" data-i18n="loadLive">حمّل مباشر</button>
+                <label><span data-i18n="liveAsset">Asset</span><select id="sel-live-asset"></select></label>
+                <label><span data-i18n="liveInterval">Interval</span><select id="sel-live-interval"></select></label>
+                <label><span data-i18n="liveRange">Range</span><select id="sel-live-range"></select></label>
+                <button id="btn-load-live" class="btn-primary" data-i18n="loadLive">Load live</button>
               </div>
               <div id="live-status" class="live-status">—</div>
               <p class="note small" data-i18n="liveLegal"></p>
             </div>
             <div>
-              <h4 class="section-title" data-i18n="dataTitle">بياناتك / نسخ احتياطي</h4>
+              <h4 class="section-title" data-i18n="dataTitle">Your data / backup</h4>
               <p class="note" data-i18n="csvNote"></p>
               <div class="inline-form">
-                <label><span data-i18n="csvSymbol">رمز الأصل</span><input id="csv-symbol" value="MYDATA"></label>
-                <label><span data-i18n="csvPip">حجم البيب</span><input id="csv-pip" type="number" step="0.0001" value="0.0001"></label>
-                <label><span data-i18n="csvContract">قيمة العقد</span><input id="csv-contract" type="number" step="1" value="100000"></label>
-                <label><span data-i18n="csvDecimals">الأرقام العشرية</span><input id="csv-decimals" type="number" min="0" max="8" value="5"></label>
-                <button id="btn-load-csv" class="btn-primary" data-i18n="loadCsv">حمّل ملف CSV</button>
+                <label><span data-i18n="csvSymbol">Symbol id</span><input id="csv-symbol" value="MYDATA"></label>
+                <label><span data-i18n="csvPip">Pip size</span><input id="csv-pip" type="number" step="0.0001" value="0.0001"></label>
+                <label><span data-i18n="csvContract">Contract value</span><input id="csv-contract" type="number" step="1" value="100000"></label>
+                <label><span data-i18n="csvDecimals">Price decimals</span><input id="csv-decimals" type="number" min="0" max="8" value="5"></label>
+                <button id="btn-load-csv" class="btn-primary" data-i18n="loadCsv">Load CSV file</button>
               </div>
               <p class="note small" id="csv-format"></p>
               <div class="btn-row wrap">
                 <button id="btn-export-json" class="btn" data-i18n="exportJson"></button>
                 <button id="btn-import-json" class="btn" data-i18n="importJson"></button>
                 <button id="btn-export-png" class="btn" data-i18n="exportPng"></button>
+                <button id="btn-export-pro" class="btn" data-i18n="exportPro"></button>
+                <button id="btn-import-pro" class="btn" data-i18n="importPro"></button>
                 <button id="btn-clear-all" class="btn danger" data-i18n="clearAll"></button>
               </div>
               <p class="note" data-i18n="localNote"></p>
             </div>
           </div>
-          <h5 class="section-title" data-i18n="freeSources">مصادر بيانات مجانية مقترحة</h5>
+          <h5 class="section-title" data-i18n="freeSources">Suggested free data sources</h5>
           <ul class="sources">
-            <li>مدمج (MIT): NQ E-mini، NAS100USD، US30، SPX500، GER30، JPN225، EUR/USD، USD/JPY، XAU/USD، USOIL</li>
+            <li>Bundled (MIT): NQ E-mini, NAS100USD, US30, SPX500, GER30, JPN225, EUR/USD, USD/JPY, XAU/USD, USOIL</li>
             <li>MetaTrader 4/5 → Tools → History Center → Export (CSV)</li>
-            <li>Stooq · Yahoo Finance · Dukascopy Historical Data Feed · Binance / منصات الكريپتو</li>
+            <li>Stooq · Yahoo Finance · Dukascopy Historical Data Feed · Binance / crypto exchanges</li>
           </ul>
           <p class="note small" data-i18n="attributionNote"></p>
         </div>
@@ -258,30 +379,39 @@
     <aside class="panel side-panel">
       <div class="panel-scroll">
         <section class="group">
-          <h3 data-i18n="order">فتح صفقة</h3>
-          <label class="check-line"><input type="checkbox" id="chk-custom-levels"> <span data-i18n="customLevels">أسعار مخصصة</span></label>
-          <label class="field"><span data-i18n="slPrice">سعر الوقف</span>
-            <span class="field-row"><input id="input-sl-price" type="number" step="any" disabled><button id="btn-pick-sl" class="mini-btn" data-i18n="pick" disabled>اختر</button></span>
+          <h3 data-i18n="order">Open a trade</h3>
+          <label class="field"><span data-i18n="orderType">Order type</span>
+            <select id="sel-order-type">
+              <option value="market" data-i18n="orderMarket">Market (instant)</option>
+              <option value="limit" data-i18n="orderLimit">Limit (pullback)</option>
+              <option value="stop" data-i18n="orderStop">Stop (breakout)</option>
+            </select>
           </label>
-          <label class="field"><span data-i18n="tpPrice">سعر الهدف</span>
-            <span class="field-row"><input id="input-tp-price" type="number" step="any" disabled><button id="btn-pick-tp" class="mini-btn" data-i18n="pick" disabled>اختر</button></span>
+          <label class="field"><span data-i18n="orderPrice">Trigger price</span><input id="input-order-price" type="number" step="any" disabled></label>
+          <label class="check-line"><input type="checkbox" id="chk-custom-levels"> <span data-i18n="customLevels">Custom price levels</span></label>
+          <label class="field"><span data-i18n="slPrice">Stop price</span>
+            <span class="field-row"><input id="input-sl-price" type="number" step="any" disabled><button id="btn-pick-sl" class="mini-btn" data-i18n="pick" disabled>Pick from chart</button></span>
           </label>
+          <label class="field"><span data-i18n="tpPrice">Target price</span>
+            <span class="field-row"><input id="input-tp-price" type="number" step="any" disabled><button id="btn-pick-tp" class="mini-btn" data-i18n="pick" disabled>Pick from chart</button></span>
+          </label>
+          <label class="field"><span data-i18n="strategy">Strategy / setup</span><select id="sel-trade-strategy"></select></label>
           <div class="info-grid">
-            <div><span data-i18n="computedSize">الحجم المحسوب</span><b id="info-size">--</b></div>
-            <div><span data-i18n="riskAmount">المبلغ المعرض للخطر</span><b id="info-risk">--</b></div>
+            <div><span data-i18n="computedSize">Computed size</span><b id="info-size">--</b></div>
+            <div><span data-i18n="riskAmount">Amount at risk</span><b id="info-risk">--</b></div>
             <div><span>SL / TP</span><b id="info-levels">--</b></div>
             <div><span>R : R</span><b id="info-rr">--</b></div>
           </div>
           <div class="trade-buttons">
-            <button id="btn-buy" class="btn-buy" data-i18n="buy">شراء / Long</button>
-            <button id="btn-sell" class="btn-sell" data-i18n="sell">بيع / Short</button>
+            <button id="btn-buy" class="btn-buy" data-i18n="buy">Buy / Long</button>
+            <button id="btn-sell" class="btn-sell" data-i18n="sell">Sell / Short</button>
           </div>
-          <label class="field"><span data-i18n="tagsLabel">وسوم</span><input id="input-tags" placeholder="breakout, london"></label>
-          <label class="field"><span data-i18n="notesLabel">ملاحظات</span><textarea id="input-notes" rows="2" placeholder="..."></textarea></label>
+          <label class="field"><span data-i18n="tagsLabel">Tags</span><input id="input-tags" placeholder="breakout, london"></label>
+          <label class="field"><span data-i18n="notesLabel">Notes</span><textarea id="input-notes" rows="2" placeholder="…"></textarea></label>
         </section>
 
         <section class="group">
-          <div class="group-head"><h3 data-i18n="positions">الصفقات المفتوحة</h3><button id="btn-close-all" class="mini-btn" data-i18n="closeAll">أغلق الكل</button></div>
+          <div class="group-head"><h3 data-i18n="positions">Open positions</h3><button id="btn-close-all" class="mini-btn" data-i18n="closeAll">Close all</button></div>
           <div id="positions-list" class="positions"></div>
         </section>
       </div>
@@ -289,21 +419,67 @@
   </main>
 
   <dialog id="help-dialog" class="help-dialog">
-    <div class="help-head"><h2 data-i18n="helpTitle">كيفاش خدام Kyoraku Replay؟</h2><button id="btn-help-close" class="icon-btn">✕</button></div>
+    <div class="help-head"><h2 data-i18n="helpTitle">How Kyoraku Replay works</h2><button id="btn-help-close" class="icon-btn">✕</button></div>
     <div class="help-body">
       <h4 data-i18n="help1Title"></h4><p data-i18n="help1"></p>
       <h4 data-i18n="help2Title"></h4><p data-i18n="help2"></p>
       <h4 data-i18n="help3Title"></h4><p data-i18n="help3"></p>
       <h4 data-i18n="help4Title"></h4><p data-i18n="help4"></p>
       <h4 data-i18n="helpRealTitle"></h4><p data-i18n="helpReal"></p>
+      <h4 data-i18n="helpProTitle"></h4><p data-i18n="helpPro"></p>
       <h4 data-i18n="legalTitle"></h4><p data-i18n="legalText"></p>
       <div class="free-callout" data-i18n="freeBadge"></div>
     </div>
-    <div class="help-foot"><button id="btn-help-ok" class="btn-primary" data-i18n="helpClose">فهمت ✅</button></div>
+    <div class="help-foot"><button id="btn-help-ok" class="btn-primary" data-i18n="helpClose">Got it ✅</button></div>
+  </dialog>
+
+  <dialog id="trade-dialog" class="trade-dialog">
+    <div class="trade-head"><h2 id="trade-dialog-title">Trade review</h2><button id="btn-trade-close" class="icon-btn">✕</button></div>
+    <div class="trade-body">
+      <div id="trade-summary" class="kpi-grid"></div>
+      <label class="field"><span data-i18n="strategy">Strategy / setup</span><select id="sel-trade-detail-strategy"></select></label>
+      <h4 class="section-title" data-i18n="checklist">Pre-trade checklist</h4>
+      <div id="trade-checklist" class="pro-list"></div>
+      <div class="tag-input-row">
+        <input id="input-checklist-new" data-i18n-placeholder="checklistPlaceholder" placeholder="Add a checklist rule…">
+        <button id="btn-add-checklist" class="btn" data-i18n="addChecklist">+ Add</button>
+      </div>
+      <h4 class="section-title" data-i18n="screenshot">Chart screenshot</h4>
+      <div class="shot-box" id="trade-shot"></div>
+      <div class="btn-row wrap">
+        <button id="btn-capture-shot" class="btn" data-i18n="captureShot">📷 Capture current chart</button>
+        <button id="btn-jump-trade" class="btn" data-i18n="jumpToTrade">⤴ Jump to this trade</button>
+        <button id="btn-delete-shot" class="btn danger" data-i18n="deleteShot">Remove screenshot</button>
+      </div>
+    </div>
+    <div class="trade-foot"><button id="btn-trade-done" class="btn-primary" data-i18n="done">Done</button></div>
+  </dialog>
+
+  <dialog id="shortcuts-dialog" class="shortcuts-dialog">
+    <div class="help-head"><h2 data-i18n="shortcutsTitle">Keyboard shortcuts</h2><button id="btn-shortcuts-close" class="icon-btn">✕</button></div>
+    <div class="pro-body">
+      <div class="shortcut-grid">
+        <div><span data-i18n="scPlay">Play / pause</span><kbd>Space</kbd></div>
+        <div><span data-i18n="scStep">Previous / next bar</span><kbd>← / →</kbd></div>
+        <div><span data-i18n="scStep10">Step 10 bars</span><kbd>Shift + ← / →</kbd></div>
+        <div><span data-i18n="scBuy">Buy / Long</span><kbd>B</kbd></div>
+        <div><span data-i18n="scSell">Sell / Short</span><kbd>S</kbd></div>
+        <div><span data-i18n="scRewind">Rewind 20 bars</span><kbd>R</kbd></div>
+        <div><span data-i18n="scCloseAll">Close all positions</span><kbd>C</kbd></div>
+        <div><span data-i18n="scTabs">Switch tabs 1–9</span><kbd>1 … 9</kbd></div>
+        <div><span data-i18n="scSpeed">Speed down / up</span><kbd>[ / ]</kbd></div>
+        <div><span data-i18n="scLayout">Cycle chart layout</span><kbd>L</kbd></div>
+        <div><span data-i18n="scTool">Cancel drawing tool</span><kbd>Esc</kbd></div>
+        <div><span data-i18n="scShortcuts">This cheat sheet</span><kbd>?</kbd></div>
+      </div>
+      <p class="note" data-i18n="shortcutsNote">Shortcuts are ignored while typing in an input, select or textarea.</p>
+    </div>
+    <div class="help-foot"><button id="btn-shortcuts-ok" class="btn-primary" data-i18n="done">Done</button></div>
   </dialog>
 
   <input type="file" id="file-csv" accept=".csv,.txt,text/csv" hidden>
   <input type="file" id="file-json" accept=".json,application/json" hidden>
+  <input type="file" id="file-events" accept=".json,.csv,application/json,text/csv" hidden>
 
   <script src="js/util.js"></script>
   <script src="js/data.js"></script>
@@ -312,8 +488,10 @@
   <script src="js/engine.js"></script>
   <script src="data/catalog.js"></script>
   <script src="js/marketdata.js"></script>
+  <script src="js/pro-core.js"></script>
   <script src="js/chart.js"></script>
   <script src="js/i18n.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/pro.js"></script>
 </body>
 </html>

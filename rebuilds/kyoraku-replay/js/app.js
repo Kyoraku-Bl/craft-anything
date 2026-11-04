@@ -130,7 +130,8 @@
     engine = new E.ReplayEngine(saved);
     T.set(engine.ui.lang);
     T.apply(document);
-    $('btn-lang').textContent = T.t('lang');
+    document.title = T.t('docTitle');
+    updateLangButtons();
     $('csv-format').textContent = 'CSV: time,open,high,low,close,volume  |  YYYY-MM-DD HH:mm  |  epoch (s/ms)  |  , ; TAB |';
 
     engine.loadMarket(engine.s.symbol, engine.s.tf);
@@ -303,7 +304,7 @@
       stopPlay();
       engine.goTo(t);
     });
-    on('sel-speed', 'change', () => { engine.ui.speed = U.clamp(numValue('sel-speed') || 1, 0.25, 50); persist(); });
+    on('sel-speed', 'change', () => { engine.ui.speed = U.clamp(numValue('sel-speed') || 1, 0.25, 200); persist(); });
 
     on('sel-symbol', 'change', () => {
       const id = $('sel-symbol').value;
@@ -453,13 +454,13 @@
       const el = e.target;
       const id = el.getAttribute('data-id');
       if (!id) return;
-      if (el.classList.contains('cell-notes')) engine.editTrade(id, { notes: el.value });
+      if (el.classList.contains('cell-input')) engine.editTrade(id, { notes: el.value });
       else if (el.classList.contains('cell-tags')) engine.editTrade(id, { tags: el.value });
     });
     on('journal-body', 'click', (e) => {
       const btn = e.target.closest('[data-del]');
       if (!btn) return;
-      if (window.confirm('حذف هاد الصفقة؟ / Delete this trade?')) engine.deleteTrade(btn.getAttribute('data-del'));
+      if (window.confirm('Delete this trade? / حذف الصفقة؟')) engine.deleteTrade(btn.getAttribute('data-del'));
     });
     on('btn-export-csv', 'click', exportTradesCsv);
 
@@ -536,21 +537,15 @@
       toast(T.t('toastExport'));
     });
     on('btn-clear-all', 'click', () => {
-      if (!window.confirm('امسح كل الجلسات والبيانات؟ / Clear all local data?')) return;
+      if (!window.confirm('Clear all local data? / مسح كل البيانات المحلية؟')) return;
       E.storage.clear();
+      if (RL.pro && typeof RL.pro.clearAll === 'function') RL.pro.clearAll();
       window.location.reload();
     });
 
     const tabs = document.querySelectorAll('.tab');
     for (const tab of tabs) {
-      tab.addEventListener('click', () => {
-        activeTab = tab.getAttribute('data-tab');
-        for (const t of tabs) t.classList.toggle('active', t === tab);
-        for (const p of document.querySelectorAll('.tab-panel')) {
-          p.classList.toggle('hidden', p.getAttribute('data-panel') !== activeTab);
-        }
-        requestRender();
-      });
+      tab.addEventListener('click', () => switchTab(tab.getAttribute('data-tab')));
     }
 
     on('btn-help', 'click', () => {
@@ -560,15 +555,8 @@
     });
     on('btn-help-close', 'click', closeHelp);
     on('btn-help-ok', 'click', closeHelp);
-    on('btn-lang', 'click', () => {
-      const next = T.lang === 'ar' ? 'en' : 'ar';
-      T.set(next);
-      engine.ui.lang = next;
-      T.apply(document);
-      $('btn-lang').textContent = T.t('lang');
-      persist();
-      renderAll();
-    });
+    on('btn-lang-en', 'click', () => setLang('en'));
+    on('btn-lang-ar', 'click', () => setLang('ar'));
 
     document.addEventListener('keydown', (e) => {
       const tag = (e.target && e.target.tagName) || '';
@@ -588,6 +576,40 @@
     if (!dlg) return;
     if (typeof dlg.close === 'function') dlg.close();
     else dlg.removeAttribute('open');
+  }
+
+  function switchTab(name) {
+    if (!name) return;
+    activeTab = name;
+    for (const t of document.querySelectorAll('.tab')) t.classList.toggle('active', t.getAttribute('data-tab') === name);
+    for (const p of document.querySelectorAll('.tab-panel')) {
+      p.classList.toggle('hidden', p.getAttribute('data-panel') !== name);
+    }
+    if (RL.pro && typeof RL.pro.onTab === 'function') RL.pro.onTab(name);
+    requestRender();
+  }
+
+  function updateLangButtons() {
+    const en = $('btn-lang-en');
+    const ar = $('btn-lang-ar');
+    if (en) en.classList.toggle('active', T.lang === 'en');
+    if (ar) ar.classList.toggle('active', T.lang === 'ar');
+  }
+
+  function setLang(next) {
+    const lang = next === 'ar' ? 'ar' : 'en';
+    if (!engine || T.lang === lang) { updateLangButtons(); return; }
+    T.set(lang);
+    engine.ui.lang = lang;
+    T.apply(document);
+    document.title = T.t('docTitle');
+    updateLangButtons();
+    lastSessionSignature = '';
+    lastJournalHtml = '';
+    lastPositionsHtml = '';
+    persist();
+    if (RL.pro && typeof RL.pro.onLanguage === 'function') RL.pro.onLanguage(lang);
+    renderAll();
   }
 
   function readTextFile(file, callback) {
@@ -679,6 +701,8 @@
   }
 
   function openTrade(side) {
+    // Limit/Stop entries are handled by the pro workspace as working orders.
+    if (RL.pro && typeof RL.pro.workingOrder === 'function' && RL.pro.workingOrder(side)) return;
     const lv = activeLevels(side);
     const opts = { slPrice: lv.sl, tpPrice: lv.tp };
     const tags = $('input-tags').value;
@@ -736,6 +760,12 @@
   function renderCharts() {
     const bars = engine.visibleBars();
     const built = I.build(bars, engine.ui.indicators);
+    // Pro indicator overlays (EMA50 / Supertrend / ATR bands) are computed in
+    // pro-core.js and appended here without touching the core indicator code.
+    if (RL.pro && typeof RL.pro.overlays === 'function') {
+      const extra = RL.pro.overlays(bars) || [];
+      built.overlays = built.overlays.concat(extra);
+    }
     mainChart.opts.volume = $('ind-volume').checked;
     mainChart.opts.rsi = !!engine.ui.indicators.rsi;
     mainChart.opts.showTrades = $('chk-trades').checked;
@@ -852,6 +882,7 @@
         const hay = (t.notes + ' ' + (t.tags || []).join(' ') + ' ' + t.symbol).toLowerCase();
         if (hay.indexOf(text) < 0) return false;
       }
+      if (RL.pro && typeof RL.pro.filterTrade === 'function' && !RL.pro.filterTrade(t)) return false;
       return true;
     });
   }
@@ -867,7 +898,7 @@
     let html = '';
     for (const tr of trades.slice(0, 500)) {
       const pnl = tr.status === 'closed' ? tr.pnl : null;
-      html += '<tr>' +
+      html += '<tr data-trade="' + U.escapeHtml(tr.id) + '">' +
         '<td>' + U.escapeHtml(tr.id) + '</td>' +
         '<td>' + U.escapeHtml(tr.symbol) + '</td>' +
         '<td class="' + (tr.side === 'buy' ? 'side-buy' : 'side-sell') + '">' + (tr.side === 'buy' ? 'Long' : 'Short') + '</td>' +
@@ -878,7 +909,8 @@
         '<td>' + (tr.status === 'closed' ? reasonLabel(tr.exitReason) : '—') + '</td>' +
         '<td><input class="cell-tags" data-id="' + tr.id + '" value="' + U.escapeHtml((tr.tags || []).join(', ')) + '" placeholder="tags">' +
         '<input class="cell-input" data-id="' + tr.id + '" value="' + U.escapeHtml(tr.notes || '') + '" placeholder="notes"></td>' +
-        '<td><button class="mini-btn danger" data-del="' + tr.id + '">✕</button></td></tr>';
+        '<td><button class="mini-btn" data-detail="' + U.escapeHtml(tr.id) + '" title="Review">⋯</button> ' +
+        '<button class="mini-btn danger" data-del="' + tr.id + '">✕</button></td></tr>';
     }
     if (html !== lastJournalHtml) { body.innerHTML = html; lastJournalHtml = html; }
   }
@@ -1008,6 +1040,21 @@
     U.download('kyoraku-replay-trades.csv', csv, 'text/csv;charset=utf-8');
     toast(T.t('toastExport'));
   }
+
+  /* A small, read-mostly bridge for the optional pro workspace module.
+     It never mutates engine state itself; pro.js owns its own storage. */
+  RL.app = {
+    get engine() { return engine; },
+    get mainChart() { return mainChart; },
+    get htfChart() { return htfChart; },
+    get activeTab() { return activeTab; },
+    get playing() { return playing; },
+    renderAll, requestRender, buildSelects, switchTab, setLang, toast,
+    stopPlay, togglePlay,
+    goToTime(t) { if (engine) { stopPlay(); engine.goTo(t); requestRender(); } },
+    activeLevels,
+    currentSymbol() { return engine ? engine.symbol : null; }
+  };
 
   if (typeof document !== 'undefined') {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

@@ -4,18 +4,18 @@
   const U = RL.util;
 
   const C = {
-    bg: '#0d1421',
-    panel: '#101a2b',
-    grid: '#1b283b',
-    gridStrong: '#26364d',
-    text: '#8ea0ba',
-    textBright: '#e6edf7',
-    up: '#2dd4a7',
-    down: '#f0616d',
-    accent: '#f7b955',
-    blue: '#4fc3f7',
-    purple: '#b98cff',
-    muted: '#5c6b83'
+    bg: '#0b1220',
+    panel: '#101a2c',
+    grid: '#1b2942',
+    gridStrong: '#2a3c5c',
+    text: '#97a8c6',
+    textBright: '#e9effc',
+    up: '#1fd39a',
+    down: '#ff5d78',
+    accent: '#7c6cff',
+    blue: '#22d3ee',
+    purple: '#b18cff',
+    muted: '#61749a'
   };
 
   function rgba(hex, alpha) {
@@ -141,7 +141,7 @@
         ctx.fillStyle = C.text;
         ctx.font = '13px system-ui, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('لا توجد بيانات / no data', this.w / 2, this.h / 2);
+        ctx.fillText((RL.i18n && RL.i18n.t('noData')) || 'No data loaded', this.w / 2, this.h / 2);
         return;
       }
       const R = this.range(v);
@@ -423,7 +423,7 @@
       ctx.fillText((this.opts.label || '') + '  ·  ' + (this.opts.tf || ''), L.left + 6, L.top + 12);
       ctx.fillStyle = rgba(C.accent, 0.75);
       ctx.font = '10px system-ui, sans-serif';
-      ctx.fillText('KYORAKU REPLAY · المستقبل مخفي', L.left + 6, L.top + 26);
+      ctx.fillText('KYORAKU REPLAY · FUTURE HIDDEN', L.left + 6, L.top + 26);
       ctx.restore();
     }
 

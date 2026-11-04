@@ -19,11 +19,11 @@
   // contract = account-currency PnL for a 1.0 price move at size 1.00.
   // These are simplified educational values, not broker specifications.
   const SYMBOLS = [
-    { id: 'EURUSD', label: 'EUR/USD', name: 'يورو / دولار', market: 'forex', price: 1.08500, vol: 0.00011, decimals: 5, pip: 0.0001, contract: 100000, seed: 1013 },
-    { id: 'GBPJPY', label: 'GBP/JPY', name: 'جنيه / ين', market: 'forex', price: 193.250, vol: 0.018, decimals: 3, pip: 0.01, contract: 1000, seed: 2027 },
-    { id: 'XAUUSD', label: 'XAU/USD', name: 'الذهب / دولار', market: 'metal', price: 2350.50, vol: 0.48, decimals: 2, pip: 0.1, contract: 100, seed: 3041 },
-    { id: 'BTCUSD', label: 'BTC/USD', name: 'بيتكوين / دولار', market: 'crypto', price: 64250.00, vol: 38, decimals: 2, pip: 1, contract: 1, seed: 4057 },
-    { id: 'US30', label: 'US30', name: 'مؤشر داو جونز', market: 'index', price: 39200.00, vol: 7.5, decimals: 2, pip: 1, contract: 1, seed: 5069 }
+    { id: 'EURUSD', label: 'EUR/USD', name: 'Euro / US Dollar', market: 'forex', price: 1.08500, vol: 0.00011, decimals: 5, pip: 0.0001, contract: 100000, seed: 1013 },
+    { id: 'GBPJPY', label: 'GBP/JPY', name: 'Pound / Yen', market: 'forex', price: 193.250, vol: 0.018, decimals: 3, pip: 0.01, contract: 1000, seed: 2027 },
+    { id: 'XAUUSD', label: 'XAU/USD', name: 'Gold / US Dollar', market: 'metal', price: 2350.50, vol: 0.48, decimals: 2, pip: 0.1, contract: 100, seed: 3041 },
+    { id: 'BTCUSD', label: 'BTC/USD', name: 'Bitcoin / US Dollar', market: 'crypto', price: 64250.00, vol: 38, decimals: 2, pip: 1, contract: 1, seed: 4057 },
+    { id: 'US30', label: 'US30', name: 'Dow Jones Index', market: 'index', price: 39200.00, vol: 7.5, decimals: 2, pip: 1, contract: 1, seed: 5069 }
   ];
 
   const baseCache = new Map();
@@ -193,9 +193,9 @@
      Returns { bars, columns, rows }. Throws a plain Error with a readable message. */
   function parseCsv(text, options) {
     const opts = options || {};
-    if (typeof text !== 'string' || !text.trim()) throw new Error('الملف فارغ / empty file');
+    if (typeof text !== 'string' || !text.trim()) throw new Error('CSV file is empty');
     const lines = text.replace(/^\uFEFF/, '').split(/\r?\n/).filter((l) => l.trim().length > 0);
-    if (lines.length < 2) throw new Error('الملف قصير بزاف / not enough rows');
+    if (lines.length < 2) throw new Error('CSV needs at least 2 rows');
     const delim = detectDelimiter(lines[0]);
     const head = splitLine(lines[0], delim).map((x) => x.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]/g, ''));
     let col = { t: -1, o: -1, h: -1, l: -1, c: -1, v: -1 };
@@ -212,7 +212,7 @@
       if (parseTime(first[0]) !== null && first.length >= 5) col = { t: 0, o: 1, h: 2, l: 3, c: 4, v: 5 };
       else col = { t: -1, o: 0, h: 1, l: 2, c: 3, v: 4 };
     }
-    if (col.o < 0 || col.h < 0 || col.l < 0 || col.c < 0) throw new Error('ما لقيناش أعمدة OHLC / missing OHLC columns');
+    if (col.o < 0 || col.h < 0 || col.l < 0 || col.c < 0) throw new Error('Missing OHLC columns');
     const bars = [];
     const start = hasHeader ? 1 : 0;
     const interval = U.isNum(opts.intervalMs) ? opts.intervalMs : 60000;
@@ -236,7 +236,7 @@
       const lo = Math.min(o, c, l);
       bars.push({ t, o, h: hi, l: lo, c, v: vol });
     }
-    if (bars.length < 3) throw new Error('ما كاينش بيانات صالحة / fewer than 3 valid rows');
+    if (bars.length < 3) throw new Error('Fewer than 3 valid rows');
     bars.sort((a, b) => a.t - b.t);
     const unique = [];
     for (const b of bars) {
@@ -251,7 +251,7 @@
     return {
       id: String(f.id || 'CUSTOM'),
       label: String(f.label || f.id || 'CUSTOM').slice(0, 24),
-      name: String(f.name || f.id || 'مخصص'),
+      name: String(f.name || f.id || 'Custom'),
       market: String(f.market || 'custom'),
       price: 1,
       vol: 0.001,

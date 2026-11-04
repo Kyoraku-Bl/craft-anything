@@ -17,12 +17,14 @@ js/engine.js                الحالة + ساعة الإعادة + محرك ا
 data/catalog.js             فهرس صغير بـ 10 أسواق حقيقية (مولّد)
 data/<ID>.js                OHLCV حقيقي MIT، يُحمّل عند الطلب كـ <script>
 js/marketdata.js            فهرس الأصول، loadBundled(), loadLive(), normalizeYahoo()
+js/pro-core.js              منطق نقي للأدوات الاحترافية (مؤشرات، رؤى، R:R، state)
 js/chart.js                 CandleChart + رسم الإحصاءات على Canvas
-js/i18n.js                  قاموس ar/en + apply(document)
-js/app.js                   ربط DOM، rendering، أحداث المستخدم
+js/i18n.js                  قاموس ar/en + apply(document)، الإنجليزية افتراضية
+js/app.js                   ربط DOM، rendering، أحداث المستخدم + bridge للـ pro
+js/pro.js                   طبقة DOM/Canvas للأدوات الاحترافية + أوامر معلّقة
 api/ohlcv.js                Vercel serverless relay اختياري (Yahoo chart API)
 scripts/build-real-data.py  إعادة توليد data/ من مصادر MIT
-tests/run.mjs               20 اختبار Node (vm)
+tests/run.mjs               25 اختبار Node (vm)
 tests/api.mjs               5 اختبارات لـ api/ohlcv.js (upstream موكّى)
 tests/browser-smoke.mjs     smoke اختياري (jsdom) على الواجهة فوق HTTP
 serve.mjs                   سيرفر ستاتيكي صفري التبعيات (0.0.0.0:4173)
@@ -160,10 +162,10 @@ if (buy ? newSL > sl : newSL < sl) sl = newSL
 
 ```
 npm run check    node --check لكل ملف + serve.mjs + api/ohlcv.js
-npm test         25 اختبار (20 + 5 api): حتمية البيانات، OHLC، aggregation، CSV،
+npm test         30 اختبار (25 + 5 api): حتمية البيانات، OHLC، aggregation، CSV،
                  indicators، replay، sizing، SL/TP، rewind، stats، MC،
                  prop، sanitize، i18n، datasets MIT، effectiveTf،
                  normalizeYahoo، trailing، partial، auto-partial،
                  storage migration، brand strings
-jsdom smoke     الواجهة كاملة: تبويبات، صفقات، إغلاق جزئي، CSV، لغة، تخزين
+jsdom smoke     الواجهة كاملة: EN افتراضي، EN/AR، تخطيط، أطر مخصصة، مؤشرات pro، استراتيجيات، رؤى، R:R، أحداث، أوامر Limit، مراجعة صفقة، accent، تخزين
 ```

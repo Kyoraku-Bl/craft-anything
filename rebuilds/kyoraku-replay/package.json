@@ -1,9 +1,9 @@
 {
   "name": "kyoraku-replay",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "private": true,
   "type": "module",
-  "description": "Kyoraku Replay — a 100% free, local-first manual backtesting studio with bundled real OHLCV market data, trailing stops and partial closes.",
+  "description": "Kyoraku Replay \u2014 a modern, 100% free, English-default market replay and backtesting workspace with a full pro toolset, real MIT-licensed OHLCV data, trailing stops and partial closes.",
   "license": "MIT OR Apache-2.0",
   "scripts": {
     "serve": "node serve.mjs",
@@ -14,7 +14,9 @@
     "verify": "npm run check && npm test && npm run smoke",
     "data": "python3 scripts/build-real-data.py --max-bars 6000"
   },
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {},
   "devDependencies": {}
 }

@@ -35,7 +35,7 @@
       },
       prop: { enabled: false, targetPct: 8, dailyPct: 5, totalPct: 10, minDays: 3 },
       ui: {
-        lang: 'ar', speed: 1, htf: true, volume: true, sessionFilter: 'active',
+        lang: 'en', speed: 1, htf: true, volume: true, sessionFilter: 'active',
         indicators: { sma20: true, sma50: false, ema20: false, bollinger: false, vwap: false, rsi: false }
       }
     };
@@ -156,8 +156,8 @@
       minDays: num(pr.minDays, 3, 0, 365)
     };
     d.ui = {
-      lang: ui.lang === 'en' ? 'en' : 'ar',
-      speed: num(ui.speed, 1, 0.25, 50),
+      lang: ui.lang === 'ar' ? 'ar' : 'en',
+      speed: num(ui.speed, 1, 0.25, 200),
       htf: bool(ui.htf, true),
       volume: bool(ui.volume, true),
       sessionFilter: str(ui.sessionFilter, 'active', 40),
@@ -701,10 +701,10 @@
         if (day !== prevDay) { dayStart = prevEq; prevDay = day; }
         const dayPnl = point.eq - dayStart;
         if (dayStart > 0 && dayPnl <= -dayStart * (p.dailyPct / 100)) {
-          this.addViolation('daily', day, 'تجاوز الخسارة اليومية / daily loss limit');
+          this.addViolation('daily', day, 'Daily loss limit exceeded');
         }
         if (point.eq <= start * (1 - p.totalPct / 100)) {
-          this.addViolation('total', day, 'تجاوز السحب الكلي / total drawdown limit');
+          this.addViolation('total', day, 'Total drawdown limit exceeded');
         }
         prevEq = point.eq;
         lastEq = point.eq;
@@ -774,7 +774,7 @@
     }
 
     allSessions() {
-      const list = [{ id: 'active', label: 'الجلسة الحالية', session: this.s }];
+      const list = [{ id: 'active', label: 'Current session', session: this.s }];
       for (const a of this.state.archive) list.push({ id: a.id, label: (a.name || a.symbol) + ' · ' + a.trades.length, session: a });
       return list;
     }

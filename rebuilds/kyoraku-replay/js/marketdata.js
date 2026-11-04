@@ -8,24 +8,24 @@
   /* Optional live feed. Same ids as the bundled files are refreshed in place;
      extra ids are live-only. Yahoo symbols are whitelisted server-side. */
   const LIVE = [
-    { id: 'NQ', yahoo: 'NQ=F', label: 'NQ=F · CME', name: 'ناسداك 100 فيوتشرز (مباشر)', market: 'futures', pip: 0.25, contract: 20, decimals: 2 },
-    { id: 'MNQ', yahoo: 'MNQ=F', label: 'MNQ=F · Micro', name: 'ميكرو ناسداك (مباشر)', market: 'futures', pip: 0.25, contract: 2, decimals: 2 },
-    { id: 'ES', yahoo: 'ES=F', label: 'ES=F · CME', name: 'E-mini S&P 500 (مباشر)', market: 'futures', pip: 0.25, contract: 50, decimals: 2 },
-    { id: 'MES', yahoo: 'MES=F', label: 'MES=F · Micro', name: 'ميكرو S&P 500 (مباشر)', market: 'futures', pip: 0.25, contract: 5, decimals: 2 },
-    { id: 'YM', yahoo: 'YM=F', label: 'YM=F · CME', name: 'E-mini داو (مباشر)', market: 'futures', pip: 1, contract: 5, decimals: 2 },
-    { id: 'NAS100USD', yahoo: '^NDX', label: '^NDX · مؤشر', name: 'مؤشر ناسداك 100 (مباشر)', market: 'index', pip: 0.1, contract: 1, decimals: 2 },
-    { id: 'US30', yahoo: '^DJI', label: '^DJI · مؤشر', name: 'مؤشر داو جونز (مباشر)', market: 'index', pip: 1, contract: 1, decimals: 2 },
-    { id: 'SPX500', yahoo: '^GSPC', label: '^GSPC · مؤشر', name: 'مؤشر S&P 500 (مباشر)', market: 'index', pip: 0.1, contract: 1, decimals: 2 },
-    { id: 'GER30', yahoo: '^GDAXI', label: '^GDAXI · مؤشر', name: 'مؤشر داكس (مباشر)', market: 'index', pip: 0.1, contract: 1, decimals: 2 },
-    { id: 'JPN225', yahoo: '^N225', label: '^N225 · مؤشر', name: 'مؤشر نيكاي (مباشر)', market: 'index', pip: 1, contract: 1, decimals: 2 },
-    { id: 'VIX', yahoo: '^VIX', label: '^VIX', name: 'مؤشر التقلب (مباشر)', market: 'index', pip: 0.01, contract: 1, decimals: 2 },
-    { id: 'EURUSD', yahoo: 'EURUSD=X', label: 'EUR/USD', name: 'يورو / دولار (مباشر)', market: 'forex', pip: 0.0001, contract: 100000, decimals: 5 },
-    { id: 'GBPJPY', yahoo: 'GBPJPY=X', label: 'GBP/JPY', name: 'جنيه / ين (مباشر)', market: 'forex', pip: 0.01, contract: 1000, decimals: 3 },
-    { id: 'USDJPY', yahoo: 'USDJPY=X', label: 'USD/JPY', name: 'دولار / ين (مباشر)', market: 'forex', pip: 0.01, contract: 1000, decimals: 3 },
-    { id: 'XAUUSD', yahoo: 'GC=F', label: 'GC=F · ذهب', name: 'ذهب CME فيوتشرز (مباشر)', market: 'metal', pip: 0.1, contract: 100, decimals: 2 },
-    { id: 'USOIL', yahoo: 'CL=F', label: 'CL=F · نفط', name: 'نفط WTI فيوتشرز (مباشر)', market: 'energy', pip: 0.01, contract: 1000, decimals: 2 },
-    { id: 'BTCUSD', yahoo: 'BTC-USD', label: 'BTC/USD', name: 'بيتكوين (مباشر)', market: 'crypto', pip: 1, contract: 1, decimals: 2 },
-    { id: 'ETHUSD', yahoo: 'ETH-USD', label: 'ETH/USD', name: 'إيثيريوم (مباشر)', market: 'crypto', pip: 0.01, contract: 1, decimals: 2 }
+    { id: 'NQ', yahoo: 'NQ=F', label: 'NQ=F · CME', name: 'Nasdaq 100 Futures (live)', market: 'futures', pip: 0.25, contract: 20, decimals: 2 },
+    { id: 'MNQ', yahoo: 'MNQ=F', label: 'MNQ=F · Micro', name: 'Micro Nasdaq (live)', market: 'futures', pip: 0.25, contract: 2, decimals: 2 },
+    { id: 'ES', yahoo: 'ES=F', label: 'ES=F · CME', name: 'E-mini S&P 500 (live)', market: 'futures', pip: 0.25, contract: 50, decimals: 2 },
+    { id: 'MES', yahoo: 'MES=F', label: 'MES=F · Micro', name: 'Micro S&P 500 (live)', market: 'futures', pip: 0.25, contract: 5, decimals: 2 },
+    { id: 'YM', yahoo: 'YM=F', label: 'YM=F · CME', name: 'E-mini Dow (live)', market: 'futures', pip: 1, contract: 5, decimals: 2 },
+    { id: 'NAS100USD', yahoo: '^NDX', label: '^NDX · Index', name: 'Nasdaq 100 Index (live)', market: 'index', pip: 0.1, contract: 1, decimals: 2 },
+    { id: 'US30', yahoo: '^DJI', label: '^DJI · Index', name: 'Dow Jones Index (live)', market: 'index', pip: 1, contract: 1, decimals: 2 },
+    { id: 'SPX500', yahoo: '^GSPC', label: '^GSPC · Index', name: 'S&P 500 Index (live)', market: 'index', pip: 0.1, contract: 1, decimals: 2 },
+    { id: 'GER30', yahoo: '^GDAXI', label: '^GDAXI · Index', name: 'DAX Index (live)', market: 'index', pip: 0.1, contract: 1, decimals: 2 },
+    { id: 'JPN225', yahoo: '^N225', label: '^N225 · Index', name: 'Nikkei 225 Index (live)', market: 'index', pip: 1, contract: 1, decimals: 2 },
+    { id: 'VIX', yahoo: '^VIX', label: '^VIX', name: 'Volatility Index (live)', market: 'index', pip: 0.01, contract: 1, decimals: 2 },
+    { id: 'EURUSD', yahoo: 'EURUSD=X', label: 'EUR/USD', name: 'Euro / US Dollar (live)', market: 'forex', pip: 0.0001, contract: 100000, decimals: 5 },
+    { id: 'GBPJPY', yahoo: 'GBPJPY=X', label: 'GBP/JPY', name: 'Pound / Yen (live)', market: 'forex', pip: 0.01, contract: 1000, decimals: 3 },
+    { id: 'USDJPY', yahoo: 'USDJPY=X', label: 'USD/JPY', name: 'US Dollar / Yen (live)', market: 'forex', pip: 0.01, contract: 1000, decimals: 3 },
+    { id: 'XAUUSD', yahoo: 'GC=F', label: 'GC=F · Gold', name: 'CME Gold Futures (live)', market: 'metal', pip: 0.1, contract: 100, decimals: 2 },
+    { id: 'USOIL', yahoo: 'CL=F', label: 'CL=F · Oil', name: 'WTI Crude Futures (live)', market: 'energy', pip: 0.01, contract: 1000, decimals: 2 },
+    { id: 'BTCUSD', yahoo: 'BTC-USD', label: 'BTC/USD', name: 'Bitcoin (live)', market: 'crypto', pip: 1, contract: 1, decimals: 2 },
+    { id: 'ETHUSD', yahoo: 'ETH-USD', label: 'ETH/USD', name: 'Ethereum (live)', market: 'crypto', pip: 0.01, contract: 1, decimals: 2 }
   ];
 
   const MARKET_LABEL = { futures: 'Futures', index: 'Indices', forex: 'Forex', metal: 'Metals', energy: 'Energy', crypto: 'Crypto', custom: 'CSV' };
@@ -87,7 +87,7 @@
         } catch (e) { reject(e); }
         script.remove();
       };
-      script.onerror = () => { reject(new Error('تعذّر تحميل ملف البيانات / could not load data/' + id + '.js')); script.remove(); };
+      script.onerror = () => { reject(new Error('Could not load data/' + id + '.js')); script.remove(); };
       document.head.appendChild(script);
     });
   }
@@ -104,13 +104,13 @@
     if (json && Array.isArray(json.bars)) {
       const compact = json.bars.filter((b) => b && U.isNum(b.t) &&
         [b.o, b.h, b.l, b.c].every((x) => U.isNum(x) && x > 0));
-      if (compact.length < 3) throw new Error('بيانات قليلة / not enough bars');
+      if (compact.length < 3) throw new Error('Not enough bars');
       compact.sort((a, b) => a.t - b.t);
       return compact.map((b) => ({ t: b.t, o: b.o, h: b.h, l: b.l, c: b.c, v: b.v || 0 }));
     }
     const r = json && json.chart && json.chart.result && json.chart.result[0];
     if (!r || !r.timestamp || !r.indicators || !r.indicators.quote || !r.indicators.quote[0]) {
-      throw new Error('استجابة البيانات فارغة / empty data response');
+      throw new Error('Empty data response');
     }
     const q = r.indicators.quote[0];
     const bars = [];
@@ -122,7 +122,7 @@
       if (![o, h, l, c].every((x) => U.isNum(x) && x > 0)) continue;
       bars.push({ t: r.timestamp[i] * 1000, o, h: Math.max(o, c, h), l: Math.min(o, c, l), c, v: (q.volume && q.volume[i]) || 0 });
     }
-    if (bars.length < 3) throw new Error('بيانات قليلة / not enough bars');
+    if (bars.length < 3) throw new Error('Not enough bars');
     bars.sort((a, b) => a.t - b.t);
     return bars;
   }

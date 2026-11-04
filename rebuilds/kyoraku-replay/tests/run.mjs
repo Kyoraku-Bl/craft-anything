@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 const root = path.resolve(import.meta.dirname, '..');
 vm.runInThisContext(fs.readFileSync(path.join(root, 'data', 'catalog.js'), 'utf8'), { filename: 'catalog.js' });
-const files = ['util', 'data', 'indicators', 'analytics', 'engine', 'marketdata', 'chart', 'i18n', 'app'];
+const files = ['util', 'data', 'indicators', 'analytics', 'engine', 'marketdata', 'chart', 'i18n', 'pro-core', 'app'];
 for (const name of files) {
   const file = path.join(root, 'js', name + '.js');
   vm.runInThisContext(fs.readFileSync(file, 'utf8'), { filename: name + '.js' });
@@ -223,7 +223,7 @@ test('session archive, save/restore and hostile state sanitizing', () => {
   assert.equal(hostile.settings.riskPct, 0.01);
   assert.equal(hostile.settings.rr, 2);
   assert.equal(hostile.ui.indicators.sma20, true);
-  assert.equal(hostile.ui.lang, 'ar');
+  assert.equal(hostile.ui.lang, 'en');
   assert.deepEqual(hostile.archive, []);
   assert.deepEqual(hostile.customDatasets, []);
 });
@@ -449,6 +449,118 @@ test('brand strings and i18n keys are complete in both languages', () => {
     assert.equal(RL.i18n.t('appSub'), 'KYORAKU REPLAY');
   }
   RL.i18n.set('ar');
+});
+
+/* ---------------- v3: English default + pro workspace logic ----------- */
+
+test('English is the default language and both dictionaries are complete', () => {
+  assert.equal(RL.engine.defaultState().ui.lang, 'en');
+  assert.equal(RL.engine.sanitize({}).ui.lang, 'en');
+  assert.equal(RL.engine.sanitize({ ui: { lang: 'ar' } }).ui.lang, 'ar');
+  const keys = RL.i18n.keys();
+  assert.ok(keys.length > 190, 'complete dictionary');
+  RL.i18n.set('ar');
+  assert.deepEqual(RL.i18n.keys(), keys);
+  RL.i18n.set('en');
+  for (const k of keys) {
+    assert.ok(RL.i18n.t(k) !== undefined && RL.i18n.t(k) !== k, 'en:' + k);
+  }
+  RL.i18n.set('ar');
+  for (const k of keys) {
+    assert.ok(RL.i18n.t(k) !== undefined && RL.i18n.t(k) !== k, 'ar:' + k);
+  }
+  RL.i18n.set('en');
+  assert.equal(RL.i18n.t('docTitle').indexOf('Free') >= 0, true);
+  assert.equal(RL.i18n.lang, 'en');
+});
+
+test('pro indicators are finite, aligned and gap-safe', () => {
+  const bars = [];
+  let t0 = Date.UTC(2026, 2, 2, 0, 0);
+  for (let i = 0; i < 120; i += 1) {
+    const c = 100 + Math.sin(i / 9) * 3 + i * .01;
+    bars.push({ t: t0 + i * 60000, o: c - .2, h: c + 1.1, l: c - 1.1, c, v: 10 + i });
+  }
+  const closes = bars.map((b) => b.c);
+  const m = RL.proCore.macd(closes);
+  assert.equal(m.line.length, bars.length);
+  assert.equal(m.hist.length, bars.length);
+  assert.ok(m.line.every((v) => v === null || Number.isFinite(v)));
+  const st = RL.proCore.stochastic(bars);
+  assert.ok(st.k.every((v) => v === null || (v >= 0 && v <= 100)));
+  assert.ok(st.d.every((v) => Number.isFinite(v)));
+  const sp = RL.proCore.supertrend(bars);
+  assert.equal(sp.up.length, bars.length);
+  assert.ok(sp.up.filter((v) => v !== null).every(Number.isFinite));
+  const ov = RL.proCore.overlays(bars, { ema50: true, supertrend: true, atr: true });
+  assert.equal(ov.length, 5);
+  assert.ok(ov.every((o) => o.values.length === bars.length));
+  const panes = RL.proCore.panes(bars, { macd: true, stoch: true, atr: true });
+  assert.ok(panes.macd && panes.stoch && panes.atr !== null);
+  const segs = RL.proCore.sessionSegments(bars);
+  assert.ok(segs.length > 0 && segs.every((s) => s.end > s.start));
+});
+
+test('custom timeframes register safely and never invent sub-minute bars', () => {
+  const label = RL.proCore.registerCustomTf(7);
+  assert.equal(label, '7m');
+  assert.equal(RL.data.TF_MS['7m'], 420000);
+  assert.ok(RL.data.TF_LIST.includes('7m'));
+  assert.equal(RL.proCore.registerCustomTf(0), null);
+  assert.equal(RL.proCore.customTfLabel(1440), '1440m');
+});
+
+test('pro state sanitizing rejects hostile data and preserves valid data', () => {
+  const clean = RL.proCore.sanitize({
+    accent: '<script>', layout: 'quad', customTfs: [3, -9, 'x', 99999],
+    drawings: [{ points: [{ t: 'x', p: NaN }] }, null],
+    events: [{ t: -1 }, { t: 1, title: 'CPI', impact: 'nope' }],
+    screenshots: { a: 'javascript:alert(1)', b: 'data:image/png;base64,AAAA' },
+    pending: [{ price: -5 }, { side: 'buy', price: 100 }],
+    indicators: { macd: 'yes' }
+  });
+  assert.equal(clean.accent, 'indigo');
+  assert.equal(clean.layout, 'dual');
+  assert.deepEqual(clean.customTfs, [3]);
+  assert.equal(clean.drawings.length, 0);
+  assert.equal(clean.events.length, 1);
+  assert.equal(clean.events[0].impact, 'medium');
+  assert.equal(Object.keys(clean.screenshots).length, 1);
+  assert.equal(clean.pending.length, 1);
+  assert.equal(clean.indicators.macd, true);
+  assert.equal(RL.proCore.sanitize(null).lang, 'en');
+});
+
+test('R:R simulator and rule-based insights are deterministic', () => {
+  const bars = [];
+  const t0 = Date.UTC(2026, 3, 6, 0, 0);
+  for (let i = 0; i < 300; i += 1) {
+    const c = 100 + Math.sin(i / 11) * 4;
+    bars.push({ t: t0 + i * 60000, o: c - .5, h: c + 2.5, l: c - 2.5, c, v: 20 });
+  }
+  const trades = [];
+  for (let i = 0; i < 12; i += 1) {
+    const entry = 100;
+    trades.push({
+      id: 't' + i, sessionId: 's1', symbol: 'NQ', side: i % 2 ? 'sell' : 'buy',
+      entryTime: bars[i * 10].t, exitTime: bars[i * 10 + 5].t,
+      entryPrice: entry, exitPrice: entry + (i % 3 ? 2 : -1), initialSL: 98,
+      size: 1, contract: 1, commission: 0, status: 'closed',
+      pnl: i % 3 ? 2 : -1, r: i % 3 ? 1 : -1, tags: i % 2 ? ['breakout'] : ['reversal'], notes: ''
+    });
+  }
+  const rr = RL.proCore.simulateRR(trades, bars, 3, 1);
+  assert.ok(rr && rr.count === 12);
+  assert.ok(Number.isFinite(rr.simulated.net) && Number.isFinite(rr.delta));
+  assert.deepEqual(rr, RL.proCore.simulateRR(trades, bars, 3, 1));
+  const ins = RL.proCore.insights(trades, 'en');
+  assert.equal(ins.ok, true);
+  assert.ok(ins.cards.length >= 8);
+  assert.ok(ins.cards.every((c) => c.value !== undefined && ['good', 'bad', 'neutral'].includes(c.tone)));
+  assert.equal(RL.proCore.insights(trades.slice(0, 2), 'en').ok, false);
+  const stats = RL.proCore.strategyStats(trades, { t0: 's1' }, [{ id: 's1', name: 'Opening drive' }], 'en');
+  assert.ok(stats.length >= 1);
+  assert.ok(stats.every((r) => r.count > 0 && Number.isFinite(r.net)));
 });
 
 console.log('\n' + passed + ' tests passed ✅');
