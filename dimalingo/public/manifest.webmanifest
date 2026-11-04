@@ -1,0 +1,17 @@
+{
+  "name": "DimaLingo - ديما لينغو (100% Free)",
+  "short_name": "DimaLingo",
+  "description": "تعلم الإنجليزية، الفرنسية، الإسبانية والدارجة المغربية بطريقة ممتعة ومجانية 100% للأبد بدون خطط مدفوعة",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#58CC02",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
