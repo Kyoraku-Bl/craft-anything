@@ -1,0 +1,37 @@
+{
+  "name": "dimalingo",
+  "private": true,
+  "version": "1.0.0",
+  "description": "DimaLingo (ديما لينغو) - 100% Free Forever Gamified Language Learning PWA (Arabic, English, French, Spanish & Moroccan Darija)",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run.mjs",
+    "dev": "vite --host 0.0.0.0 --port 5173",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4173",
+    "predev": "node scripts/prepare-speech-model.mjs",
+    "prebuild": "node scripts/prepare-speech-model.mjs",
+    "test:microphone": "node tests/browser-microphone.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.8.1",
+    "canvas-confetti": "^1.9.3",
+    "lucide-react": "^0.475.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sts-whisper-tiny": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "jsdom": "^26.1.0",
+    "playwright-core": "^1.55.0",
+    "postcss": "^8.5.1",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0"
+  }
+}
