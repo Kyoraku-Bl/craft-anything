@@ -4,6 +4,14 @@ import React, { act } from 'react';
 import { PronunciationRecorder } from '../src/components/PronunciationRecorder';
 import { SpeakingLabView } from '../src/components/SpeakingLabView';
 import { COURSE_MAP } from '../src/data';
+import { classifyLocalSpeechError, safeSpeechErrorDetail } from '../src/utils/speechDiagnostics';
+
+assert.equal(classifyLocalSpeechError('loading', 'RangeError: out of memory'), 'MEMORY');
+assert.equal(classifyLocalSpeechError('loading', 'TypeError: Failed to fetch'), 'DOWNLOAD');
+assert.equal(classifyLocalSpeechError('loading', 'QuotaExceededError'), 'CACHE');
+assert.equal(classifyLocalSpeechError('loading', 'no available backend found [wasm]'), 'RUNTIME');
+assert.equal(classifyLocalSpeechError('transcribing', 'inference failed'), 'TRANSCRIBE');
+assert(!safeSpeechErrorDetail('failure https://example.com/private?a=1').includes('example.com'));
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: 'https://dimalingo.vercel.app/' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, IS_REACT_ACT_ENVIRONMENT: true });
@@ -194,8 +202,11 @@ await act(async () => oldWorker.onmessage?.({data:{status:'done',text:'Bonjour'}
 assert.deepEqual(recognized, ['Bonjour'], 'stale local results must not be scored');
 await act(async () => click('Speak into mic'));
 await act(async () => click('Stop and transcribe'));
-await act(async () => FakeWorker.last.onmessage?.({data:{status:'error'}}));
-assert(document.body.textContent?.includes('Could not download or run local recognition'));
+await act(async () => FakeWorker.last.onmessage?.({data:{status:'error', stage:'loading', message:'TypeError: Failed to fetch https://example.com/model'}}));
+assert(document.body.textContent?.includes('Could not download the speech model'));
+assert(document.body.textContent?.includes('DLM-SPEECH-DOWNLOAD'));
+assert(!document.body.textContent?.includes('example.com/model'));
+assert(document.body.textContent?.includes('Try browser speech instead'));
 assert.equal(recognized.length, 1);
 await act(async () => localRoot.unmount());
 

@@ -8,6 +8,7 @@ import {
   Volume2,
 } from 'lucide-react';
 import { UILang } from '../types';
+import { classifyLocalSpeechError, safeSpeechErrorDetail, LocalSpeechFailure } from '../utils/speechDiagnostics';
 import { t, UI_STRINGS } from '../i18n';
 import {
   PronunciationEvaluation,
@@ -84,6 +85,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
   const [liveTranscript, setLiveTranscript] = useState('');
   const [evaluation, setEvaluation] = useState<PronunciationEvaluation | null>(null);
   const [micWarning, setMicWarning] = useState<string | null>(null);
+  const [micDiagnostic, setMicDiagnostic] = useState<{ code: LocalSpeechFailure; detail: string } | null>(null);
   const [recordedAudioUrl, setRecordedAudioUrl] = useState<string | null>(null);
   const [dictationAvailable, setDictationAvailable] = useState(false);
   // A failed browser service should not send the next attempt back to it.
@@ -130,6 +132,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     setLiveTranscript('');
     setEvaluation(null);
     setMicWarning(null);
+    setMicDiagnostic(null);
     setRecordedAudioUrl(null);
     setDictationAvailable(false);
     setDictationText('');
@@ -193,7 +196,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     useLocalFromNowOn();
     const session = ++sessionRef.current;
     busyRef.current = true;
-    setPhase('starting'); setMicWarning(null); setLiveTranscript(''); setEvaluation(null);
+    setPhase('starting'); setMicWarning(null); setMicDiagnostic(null); setLiveTranscript(''); setEvaluation(null);
     setEvaluationSource('speech'); clearRecording();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined' || typeof Worker === 'undefined') {
@@ -239,21 +242,36 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             peak = Math.max(peak, Math.abs(samples[i]));
           }
           if (samples.length < 4000 || peak < 0.002) throw new Error('silent');
-          const worker = new Worker(new URL('../workers/localSpeech.ts', import.meta.url), { type: 'module' });
+          let worker: Worker;
+          try { worker = new Worker(new URL('../workers/localSpeech.ts', import.meta.url), { type: 'module' }); }
+          catch (error) {
+            if (session !== sessionRef.current) return;
+            busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
+            setMicDiagnostic({ code: 'WORKER', detail: safeSpeechErrorDetail(error instanceof Error ? error.message : String(error)) });
+            setMicWarning(message('ما قدرناش نشغلو محرك الصوت. حدّث المتصفح وعاود المحاولة.', 'Impossible de démarrer le moteur vocal. Mettez le navigateur à jour et réessayez.', 'Could not start the speech engine. Update your browser and retry.'));
+            return;
+          }
           localWorkerRef.current = worker;
-          const fail = () => {
+          const fail = (code: LocalSpeechFailure, detail = '') => {
             if (session !== sessionRef.current) return;
             clearWatchdog(); worker.terminate(); localWorkerRef.current = null;
             busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
-            setMicWarning(message('ما قدرناش نحمّلو أو نشغّلو التعرف المحلي. تأكد من الإنترنت والمساحة، وعاود المحاولة أو استعمل إملاء لوحة المفاتيح.', 'Impossible de télécharger ou lancer la reconnaissance locale. Vérifiez la connexion et l’espace, réessayez ou utilisez la dictée du clavier.', 'Could not download or run local recognition. Check your connection and storage, retry, or use keyboard dictation.'));
+            setMicDiagnostic({ code, detail: safeSpeechErrorDetail(detail) });
+            setMicWarning(code === 'MEMORY' ? message('الجهاز ما قدرش يشغّل نموذج الصوت بسبب الذاكرة. سد التطبيقات الأخرى وعاود المحاولة.', 'Mémoire insuffisante pour le modèle vocal. Fermez les autres applications et réessayez.', 'Not enough memory to run the speech model. Close other apps and retry.') : code === 'DOWNLOAD' ? message('تعذر تحميل نموذج الصوت. تأكد من الإنترنت وعاود المحاولة.', 'Le modèle vocal n’a pas pu être téléchargé. Vérifiez la connexion et réessayez.', 'Could not download the speech model. Check your connection and retry.') : code === 'TIMEOUT' ? message('توقف التحميل أو التحليل لمدة طويلة. تأكد من الإنترنت وعاود المحاولة.', 'Le téléchargement ou l’analyse a expiré. Vérifiez la connexion et réessayez.', 'The download or processing timed out. Check your connection and retry.') : message('ما قدرناش نشغّلو التعرف المحلي على هاد الجهاز. عاود المحاولة، أو جرّب مايك المتصفح إلا كان متوفراً.', 'Impossible de lancer la reconnaissance locale sur cet appareil. Réessayez ou essayez le micro du navigateur s’il est disponible.', 'Could not run local recognition on this device. Retry or try browser recognition if available.'));
           };
-          worker.onerror = fail;
+          const resetLocalWatchdog = () => {
+            clearWatchdog(); timeoutRef.current = setTimeout(() => fail('TIMEOUT'), 240000);
+          };
+          worker.onerror = event => fail('WORKER', event.message);
           worker.onmessage = event => {
             if (session !== sessionRef.current) return;
             const data = event.data;
-            if (data.status === 'loading' || data.status === 'progress') setLocalStatus(message('كنحمّلو نموذج الصوت لأول مرة…', 'Téléchargement du modèle vocal…', 'Downloading the speech model…'));
-            else if (data.status === 'transcribing') setLocalStatus(message('كنحوّلو الصوت لنص على الجهاز…', 'Transcription sur l’appareil…', 'Transcribing on your device…'));
-            else if (data.status === 'error') fail();
+            if (data.status === 'loading' || data.status === 'progress') {
+              resetLocalWatchdog();
+              setLocalStatus(message('كنحمّلو نموذج الصوت لأول مرة…', 'Téléchargement du modèle vocal…', 'Downloading the speech model…'));
+            }
+            else if (data.status === 'transcribing') { resetLocalWatchdog(); setLocalStatus(message('كنحوّلو الصوت لنص على الجهاز…', 'Transcription sur l’appareil…', 'Transcribing on your device…')); }
+            else if (data.status === 'error') fail(classifyLocalSpeechError(data.stage, data.message || ''), data.message);
             else if (data.status === 'done') {
               clearWatchdog(); worker.terminate(); localWorkerRef.current = null;
               busyRef.current = false; setPhase('idle');
@@ -262,7 +280,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
               else { setLiveTranscript(text); finalizeEvaluation(text); }
             }
           };
-          timeoutRef.current = setTimeout(fail, 240000);
+          resetLocalWatchdog();
           const lang = (speechLang || audioLang).split('-')[0].toLowerCase();
           worker.postMessage({ audio: samples, language: ['ar', 'fr', 'en', 'es'].includes(lang) ? lang : 'ar' }, [samples.buffer]);
         } catch (error) {
@@ -601,6 +619,16 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
         {micWarning && (
           <div role="alert" className="w-full max-w-lg p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-xs font-bold text-center space-y-2">
             <p>{micWarning}</p>
+            {micDiagnostic && <div>
+              <p dir="ltr">DLM-SPEECH-{micDiagnostic.code}</p>
+              {micDiagnostic.detail && <details><summary>{message('تفاصيل الخطأ', 'Détails de l’erreur', 'Error details')}</summary><p dir="ltr" className="break-all font-normal">{micDiagnostic.detail}</p></details>}
+              {(('SpeechRecognition' in window) || ('webkitSpeechRecognition' in window)) && <button type="button" onClick={() => {
+                setPreferLocal(false); setMicWarning(null); setMicDiagnostic(null);
+                try { window.sessionStorage.removeItem('dimalingo-local-mic'); } catch { /* storage unavailable */ }
+              }} className="mt-2 px-3 py-2 rounded-lg bg-amber-200/80 dark:bg-amber-800 font-black">
+                {message('جرّب مايك المتصفح بدلاً من المحلي', 'Essayer le micro du navigateur', 'Try browser speech instead')}
+              </button>}
+            </div>}
             <a
               href={window.location.href}
               target="_blank"
