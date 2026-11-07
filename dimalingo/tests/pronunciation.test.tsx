@@ -5,7 +5,16 @@ import { PronunciationRecorder } from '../src/components/PronunciationRecorder';
 import { SpeakingLabView } from '../src/components/SpeakingLabView';
 import { COURSE_MAP } from '../src/data';
 import { classifyLocalSpeechError, safeSpeechErrorDetail } from '../src/utils/speechDiagnostics';
+import { supportsWasmSimd } from '../src/utils/wasmCapabilities';
 
+assert(supportsWasmSimd(), 'test environment supports SIMD');
+const originalValidate = WebAssembly.validate;
+try {
+  WebAssembly.validate = () => false;
+  assert.equal(supportsWasmSimd(), false, 'select the compatibility runtime without SIMD');
+  WebAssembly.validate = () => { throw new Error('blocked'); };
+  assert.equal(supportsWasmSimd(), false, 'blocked validation also selects compatibility mode');
+} finally { WebAssembly.validate = originalValidate; }
 assert.equal(classifyLocalSpeechError('loading', 'RangeError: out of memory'), 'MEMORY');
 assert.equal(classifyLocalSpeechError('loading', 'TypeError: Failed to fetch'), 'DOWNLOAD');
 assert.equal(classifyLocalSpeechError('loading', 'QuotaExceededError'), 'CACHE');

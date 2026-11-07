@@ -1,3 +1,4 @@
+import { supportsWasmSimd } from '../utils/wasmCapabilities';
 import React, { useEffect, useRef, useState } from 'react';
 import {
   ExternalLink,
@@ -242,8 +243,13 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             peak = Math.max(peak, Math.abs(samples[i]));
           }
           if (samples.length < 4000 || peak < 0.002) throw new Error('silent');
+          const useSimd = supportsWasmSimd();
           let worker: Worker;
-          try { worker = new Worker(new URL('../workers/localSpeech.ts', import.meta.url), { type: 'module' }); }
+          try {
+            worker = useSimd
+              ? new Worker(new URL('../workers/localSpeech.ts', import.meta.url), { type: 'module' })
+              : new Worker(new URL('../workers/legacySpeech.ts', import.meta.url), { type: 'module' });
+          }
           catch (error) {
             if (session !== sessionRef.current) return;
             busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
@@ -260,7 +266,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             setMicWarning(code === 'MEMORY' ? message('الجهاز ما قدرش يشغّل نموذج الصوت بسبب الذاكرة. سد التطبيقات الأخرى وعاود المحاولة.', 'Mémoire insuffisante pour le modèle vocal. Fermez les autres applications et réessayez.', 'Not enough memory to run the speech model. Close other apps and retry.') : code === 'DOWNLOAD' ? message('تعذر تحميل نموذج الصوت. تأكد من الإنترنت وعاود المحاولة.', 'Le modèle vocal n’a pas pu être téléchargé. Vérifiez la connexion et réessayez.', 'Could not download the speech model. Check your connection and retry.') : code === 'TIMEOUT' ? message('توقف التحميل أو التحليل لمدة طويلة. تأكد من الإنترنت وعاود المحاولة.', 'Le téléchargement ou l’analyse a expiré. Vérifiez la connexion et réessayez.', 'The download or processing timed out. Check your connection and retry.') : message('ما قدرناش نشغّلو التعرف المحلي على هاد الجهاز. عاود المحاولة، أو جرّب مايك المتصفح إلا كان متوفراً.', 'Impossible de lancer la reconnaissance locale sur cet appareil. Réessayez ou essayez le micro du navigateur s’il est disponible.', 'Could not run local recognition on this device. Retry or try browser recognition if available.'));
           };
           const resetLocalWatchdog = () => {
-            clearWatchdog(); timeoutRef.current = setTimeout(() => fail('TIMEOUT'), 240000);
+            clearWatchdog(); timeoutRef.current = setTimeout(() => fail('TIMEOUT'), useSimd ? 240000 : 600000);
           };
           worker.onerror = event => fail('WORKER', event.message);
           worker.onmessage = event => {
@@ -270,7 +276,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
               resetLocalWatchdog();
               setLocalStatus(message('كنحمّلو نموذج الصوت لأول مرة…', 'Téléchargement du modèle vocal…', 'Downloading the speech model…'));
             }
-            else if (data.status === 'transcribing') { resetLocalWatchdog(); setLocalStatus(message('كنحوّلو الصوت لنص على الجهاز…', 'Transcription sur l’appareil…', 'Transcribing on your device…')); }
+            else if (data.status === 'transcribing') { resetLocalWatchdog(); setLocalStatus(useSimd ? message('كنحوّلو الصوت لنص على الجهاز…', 'Transcription sur l’appareil…', 'Transcribing on your device…') : message('كنحوّلو الصوت لنص بطريقة متوافقة مع جهازك، ممكن تاخذ وقت أطول…', 'Transcription compatible avec votre appareil : cela peut prendre plus de temps…', 'Transcribing in compatibility mode; this may take longer…')); }
             else if (data.status === 'error') fail(classifyLocalSpeechError(data.stage, data.message || ''), data.message);
             else if (data.status === 'done') {
               clearWatchdog(); worker.terminate(); localWorkerRef.current = null;
