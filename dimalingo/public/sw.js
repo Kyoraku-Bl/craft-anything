@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dimalingo-v3';
+const CACHE_NAME = 'dimalingo-v4';
 const ASSETS = [
   '/',
   '/index.html',
@@ -33,7 +33,7 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   // Transformers.js manages its own model cache. Never intercept or duplicate
   // cross-origin model downloads, or return the app shell for failed assets.
-  if (url.origin !== self.location.origin || url.pathname.endsWith('.wasm')) return;
+  if (url.origin !== self.location.origin || url.pathname.endsWith('.wasm') || url.pathname.startsWith('/models/')) return;
   if (
     url.pathname.endsWith('.apk') ||
     url.pathname.endsWith('.mobileconfig')

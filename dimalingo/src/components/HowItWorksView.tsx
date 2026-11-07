@@ -72,9 +72,9 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({ uiLang }) => {
         en: 'Locked behind expensive Duolingo Max (~$30/mo)',
       },
       dimalingo: {
-        ar: 'تقييم النطق كلمة بكلمة فالمايكروفون 🎙️ + شرح القواعد مجاناً فكل سؤال!',
-        fr: 'Score vocal mot par mot au micro 🎙️ + explications gratuites !',
-        en: 'Live waveform Mic Recorder + word-by-word accent score + free grammar breakdowns!',
+        ar: 'مقارنة الكلمات اللي تعرّف عليها المايك 🎙️ + شرح القواعد مجاناً!',
+        fr: 'Comparaison des mots reconnus au micro 🎙️ + explications gratuites !',
+        en: 'Microphone practice with recognized-text matching and free grammar explanations!',
       },
     },
     {
@@ -136,13 +136,13 @@ export const HowItWorksView: React.FC<HowItWorksViewProps> = ({ uiLang }) => {
           <div className="flex items-center gap-2.5 text-duo-blue font-black text-base">
             <Volume2 className="w-5 h-5" />
             {uiLang === 'ar'
-              ? '2. محرك الصوت والمايكروفون (Web Speech)'
+              ? '2. التعرف على الكلام والمايكروفون'
               : '2. Speech Recognition & Pronunciation Practice'}
           </div>
           <p className="text-xs sm:text-sm font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
             {uiLang === 'ar'
-              ? 'التطبيق كيستعمل خدمة التعرف على الكلام ديال المتصفح ويقارن النص بالجملة. بعض المتصفحات كتحتاج الإنترنت أو ما كتدعمش هاد الخدمة؛ فهاد الحالة التسجيل كيسمح غير بسماع الصوت.'
-              : 'Speech recognition uses your browser’s service and compares its transcript with the sentence. It may require internet or be unavailable in some browsers; recording-only mode does not provide a score.'}
+              ? 'التطبيق كيستعمل خدمة المتصفح أو نموذج مجاني كيتحمّل ويخدم على الجهاز. النتيجة كتقارن النص المتعرّف عليه، ما كتقيسش جودة النطق مباشرة. الدقة والسرعة كتختلف حسب الجهاز واللغة.'
+              : uiLang === 'fr' ? 'La reconnaissance utilise le navigateur ou un modèle gratuit téléchargé sur l’appareil. Le score compare le texte reconnu, pas la qualité de la prononciation. La précision et la vitesse varient selon l’appareil et la langue.' : 'Recognition uses the browser service or a free model downloaded to your device. The score compares recognized text, not pronunciation quality. Accuracy and speed vary by device and language.'}
           </p>
           <button
             type="button"

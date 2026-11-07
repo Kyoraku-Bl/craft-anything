@@ -276,7 +276,7 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
     } catch (error) {
       if (session !== sessionRef.current) return;
       releaseStream(); mediaRecorderRef.current = null; busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
-      setMicWarning(error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'SecurityError') ? message('ما عندناش إذن المايكروفون. سمح ليه من إعدادات iPhone وعاود المحاولة.', 'Accès au micro refusé. Autorisez-le dans les réglages de l’iPhone et réessayez.', 'Microphone access was denied. Allow it in iPhone settings and try again.') : errorMessage('audio-capture'));
+      setMicWarning(error instanceof DOMException && (error.name === 'NotAllowedError' || error.name === 'SecurityError') ? message('ما عندناش إذن المايكروفون. سمح ليه من إعدادات التطبيق أو الموقع فالجهاز وعاود المحاولة.', 'Accès au micro refusé. Autorisez-le dans les réglages de l’application ou du site sur votre appareil, puis réessayez.', 'Microphone access was denied. Allow it in your device’s app or site settings and try again.') : errorMessage('audio-capture'));
     }
   };
 

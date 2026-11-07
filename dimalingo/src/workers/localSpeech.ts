@@ -3,14 +3,16 @@ import { env, pipeline } from '@huggingface/transformers';
 import wasmURL from '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.wasm?url';
 import mjsURL from '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.jsep.mjs?url';
 
-env.allowLocalModels = false;
+env.allowLocalModels = true;
+env.allowRemoteModels = false;
+env.localModelPath = new URL('/models/', self.location.origin).href;
 env.backends.onnx.wasm!.numThreads = 1;
 env.backends.onnx.wasm!.wasmPaths = { wasm: wasmURL, mjs: mjsURL };
 
 self.onmessage = async (event: MessageEvent<{ audio: Float32Array; language: string }>) => {
   try {
     self.postMessage({ status: 'loading' });
-    const transcriber = await pipeline('automatic-speech-recognition', 'onnx-community/whisper-tiny', {
+    const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny', {
       dtype: 'q8', device: 'wasm',
       progress_callback: (progress: { status: string; progress?: number }) => {
         if (progress.status === 'progress' && typeof progress.progress === 'number')

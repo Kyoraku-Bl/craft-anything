@@ -91,7 +91,7 @@ export const AndroidApkModal: React.FC<AndroidApkModalProps> = ({
             </div>
             <div>
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 text-[11px] font-black">
-                <Sparkles className="w-3 h-3" /> Android APK v2.0 • 100% Free
+                <Sparkles className="w-3 h-3" /> Android APK v2.1 • 100% Free
               </span>
               <h2 className="text-xl font-black text-slate-800 dark:text-slate-100 mt-0.5">
                 {uiLang === 'ar'
@@ -127,8 +127,8 @@ export const AndroidApkModal: React.FC<AndroidApkModalProps> = ({
 
           <p className="text-xs font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
             {uiLang === 'ar'
-              ? 'نسخة أندرويد كاملة موقعة رسمياً كتخدم أونلاين وأوفلاين، مع دعم المايكروفون، الصوت، والوضع الليلي!'
-              : 'Signed Android package supporting online updates, offline mode, microphone exercises, and Dark Mode.'}
+              ? 'تطبيق أندرويد موقّع كيعرض الموقع عبر الإنترنت. المايك كيحتاج الإذن وتحميل نموذج الصوت؛ الخدمة كتختلف حسب الجهاز.'
+              : uiLang === 'fr' ? 'Application Android signée : elle nécessite Internet. Le micro demande une autorisation et le téléchargement du modèle vocal ; la compatibilité dépend de l’appareil.' : 'Signed Android wrapper: internet is required. Microphone use requires permission and a speech-model download; compatibility varies by device.'}
           </p>
 
           <a
@@ -142,6 +142,8 @@ export const AndroidApkModal: React.FC<AndroidApkModalProps> = ({
               ? 'تحميل ملف DimaLingo-Android.apk دابا'
               : 'Download DimaLingo-Android.apk'}
           </a>
+
+          <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{uiLang === 'ar' ? 'مهم: التوقيع تبدّل. إذا كانت نسخة قديمة مثبتة، قد تحتاج لحذفها قبل التثبيت؛ الحذف قد يمسح التقدم المحفوظ داخلها.' : uiLang === 'fr' ? 'Important : la signature a changé. Si une ancienne version est installée, il faudra peut-être la désinstaller ; cela peut effacer sa progression locale.' : 'Important: the signing key changed. If an older version is installed, you may need to uninstall it first; doing so can erase its locally saved progress.'}</p>
 
           {/* Direct Copyable Link */}
           <div className="flex items-center gap-2 bg-white dark:bg-duo-nightCard rounded-xl p-2 border border-slate-200 dark:border-duo-nightBorder">
