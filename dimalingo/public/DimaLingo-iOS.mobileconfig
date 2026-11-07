@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>FullScreen</key>
+			<true/>
+			<key>Icon</key>
+			<data>
+			iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAIAAACyr5FlAAADxklE
+			QVR42u3dTW7TQBiA4TrxGUBC4hCoC67SXIRDcJGepVIjlhwACQkW
+			3KCCRVQ1pE6V2PPzzfh5xarQUuyn30ycxAx3j5sbaSoyBIfgEByC
+			Q3AIDsEhOASH4JBeNSb8Wp/evXdAI/Tt969AOLAI1eF0LCcyYoFI
+			lj0HGa0QsSFVmEcrxkb3w8PkUGocxsYahofJITgEh+AQHIJDXeFI
+			9byfyjTvfJkcyoDD8Oh7bJgceqtxIUnX0RP25ePPyY9//fGhyoAf
+			ktyCAZEcJhYqWb7uDwnvz4FIVhmX+0i1HRzcvKVW97dPpx96GKb/
+			6Oe/Jx/Y7behH60opYyH4ayMqd+dgAVHhzLeZnGeSAEfcNSWcW0F
+			fcBRrxkyFn4iHG2MjYUn+PnTsw4POKo+PAn8ZeFobUEpu7iMnf3k
+			zb4AMPnFy1xOCFsbF8GunZwzTmpWeSl3Gyc9Xx/L4XjsjMXxZyU/
+			XsffzBqGyqY/GWUuA9zfPpW5TFmx8UYp/HU5SDbxj3vY4dH9IPFQ
+			FpHWcCQ8xOXPVjc+TA4jBI7a8+9lx/rqlTvzy3mRAw4jBI5oW6gk
+			wyPhBIKjuo9Mwz/fJRY4KvlY+HOfebcBR+31ZbaP/AsKHAGacZqP
+			PiX3NXvPrcTwccnz+P9LKvBsDhwtEKn0piY4arbbb6/dhZR8+tee
+			o76PCI9aJwv6MsGEVxXnHdBilzWPv71zf2mtF4vAUR9K2BcKWVYu
+			OnmHX/F/EuCorGQ9/144QhCJOTzg6G2jAEeHIyTg8IDDCIGjBR/R
+			hgcc5gccjfgINTzgEBwWFzg68BFnZYFDcFhc4OjDR5CVBQ7BITjs
+			POAQHCsuwp4UDisLHIJDcAgOwSE4BIfgEByCQ4KjZK3fGx+OoEV4
+			XgYOwWFNgUNwCI61rilBXiUEh90GHIKjg7ER55WncFhQ4BAcrY+N
+			UO9mgMOCAkcLMqK9CQoOM+Ns/huvKCwCvnfS5DAwTI7YLGK+5RoO
+			0wKOwCbC3qkBjspDIvI9PMY1nOZLTkCVJSP43V08WhEc8Yp/Uyg4
+			yICDDDjIgIMMOMiAgww4yGgsl8+xMDnIMDmw6H9yJDy45c9TN/8B
+			oMmBRYN7jiQHutjZ2u23nckwOYyKZh+tLDz0Wc9cl6OisclxOAHX
+			vkwr02nrXkOTy8rlRNKev7VpOGm4e3QdTA3uOQSH4BAcgkNwCA4J
+			DsEhOASH4BAcgkNwCA7BIb00/vnuIMjkEByCQ3AIDsEhOASH4BAc
+			EhyCQ3AIDsEhOASH4BAcgkOCQ3AIDsEhOBSgf7YITfcFqS7zAAAA
+			AElFTkSuQmCC
+			</data>
+			<key>IgnoreManifestScope</key>
+			<false/>
+			<key>IsRemovable</key>
+			<true/>
+			<key>Label</key>
+			<string>DimaLingo</string>
+			<key>PayloadDescription</key>
+			<string>Adds DimaLingo full-screen app to your iPhone / iPad Home Screen (All iOS versions).</string>
+			<key>PayloadDisplayName</key>
+			<string>DimaLingo Web App</string>
+			<key>PayloadIdentifier</key>
+			<string>com.dimalingo.app.webclip</string>
+			<key>PayloadType</key>
+			<string>com.apple.webClip.managed</string>
+			<key>PayloadUUID</key>
+			<string>58CC0200-D14A-4B1E-9A01-000000000001</string>
+			<key>PayloadVersion</key>
+			<integer>1</integer>
+			<key>Precomposed</key>
+			<true/>
+			<key>URL</key>
+			<string>https://dimalingo.vercel.app/?standalone=ios</string>
+		</dict>
+	</array>
+	<key>PayloadDescription</key>
+	<string>تثبيت تطبيق DimaLingo (ديما لينغو) مجاناً 100% على شاشة الآيفون والآيباد — يدعم جميع إصدارات iOS (A1-C2).</string>
+	<key>PayloadDisplayName</key>
+	<string>DimaLingo • ديما لينغو (iPhone &amp; iPad)</string>
+	<key>PayloadIdentifier</key>
+	<string>com.dimalingo.app.ios.profile</string>
+	<key>PayloadOrganization</key>
+	<string>DimaLingo (100% Free)</string>
+	<key>PayloadRemovalDisallowed</key>
+	<false/>
+	<key>PayloadType</key>
+	<string>Configuration</string>
+	<key>PayloadUUID</key>
+	<string>58CC0200-D14A-4B1E-9A01-000000000002</string>
+	<key>PayloadVersion</key>
+	<integer>1</integer>
+</dict>
+</plist>

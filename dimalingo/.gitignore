@@ -1,0 +1,12 @@
+node_modules
+dist
+.vite
+*.local
+*.tsbuildinfo
+
+# Generated from the pinned npm model at build time
+public/models/
+
+# Android wrapper build intermediates
+android-wrapper/build/
+android-wrapper/dist/

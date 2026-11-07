@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <rect width="256" height="256" rx="56" fill="#58CC02"/>
+  <rect x="8" y="8" width="240" height="228" rx="48" fill="#65DA0E"/>
+  <!-- Cute Fennec / Ziko Mascot Ears -->
+  <path d="M56 106 L32 34 C30 26 39 21 46 27 L98 74 Z" fill="#FFC800"/>
+  <path d="M60 98 L45 48 L88 78 Z" fill="#FFF0A8"/>
+  <path d="M200 106 L224 34 C226 26 217 21 210 27 L158 74 Z" fill="#FFC800"/>
+  <path d="M196 98 L211 48 L168 78 Z" fill="#FFF0A8"/>
+  <!-- Head -->
+  <ellipse cx="128" cy="140" rx="76" ry="68" fill="#FFC800"/>
+  <ellipse cx="128" cy="154" rx="58" ry="48" fill="#FFF8DC"/>
+  <!-- Big Expressive Eyes -->
+  <circle cx="98" cy="130" r="22" fill="#FFFFFF"/>
+  <circle cx="158" cy="130" r="22" fill="#FFFFFF"/>
+  <circle cx="101" cy="130" r="12" fill="#1F2937"/>
+  <circle cx="155" cy="130" r="12" fill="#1F2937"/>
+  <circle cx="105" cy="125" r="4.5" fill="#FFFFFF"/>
+  <circle cx="159" cy="125" r="4.5" fill="#FFFFFF"/>
+  <!-- Cute Nose & Smile -->
+  <ellipse cx="128" cy="152" rx="10" ry="7" fill="#FF6B4A"/>
+  <path d="M112 166 Q128 182 144 166" stroke="#1F2937" stroke-width="6" stroke-linecap="round" fill="none"/>
+  <!-- Emerald Star Badge -->
+  <circle cx="204" cy="204" r="26" fill="#1CB0F6" stroke="#FFFFFF" stroke-width="5"/>
+  <path d="M204 188 L208.5 198 L219.5 199 L211 206.5 L213.5 217.5 L204 211.5 L194.5 217.5 L197 206.5 L188.5 199 L199.5 198 Z" fill="#FFC800"/>
+</svg>
