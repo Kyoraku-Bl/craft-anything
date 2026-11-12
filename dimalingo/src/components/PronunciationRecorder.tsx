@@ -243,24 +243,11 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
             peak = Math.max(peak, Math.abs(samples[i]));
           }
           if (samples.length < 4000 || peak < 0.002) throw new Error('silent');
-          const useSimd = supportsWasmSimd();
-          let worker: Worker;
-          try {
-            worker = useSimd
-              ? new Worker(new URL('../workers/localSpeech.ts', import.meta.url), { type: 'module' })
-              : new Worker(new URL('../workers/legacySpeech.ts', import.meta.url), { type: 'module' });
-          }
-          catch (error) {
-            if (session !== sessionRef.current) return;
-            busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
-            setMicDiagnostic({ code: 'WORKER', detail: safeSpeechErrorDetail(error instanceof Error ? error.message : String(error)) });
-            setMicWarning(message('ما قدرناش نشغلو محرك الصوت. حدّث المتصفح وعاود المحاولة.', 'Impossible de démarrer le moteur vocal. Mettez le navigateur à jour et réessayez.', 'Could not start the speech engine. Update your browser and retry.'));
-            return;
-          }
-          localWorkerRef.current = worker;
+          let useSimd = supportsWasmSimd();
+          let worker: Worker | null = null;
           const fail = (code: LocalSpeechFailure, detail = '') => {
             if (session !== sessionRef.current) return;
-            clearWatchdog(); worker.terminate(); localWorkerRef.current = null;
+            clearWatchdog(); worker?.terminate(); localWorkerRef.current = null;
             busyRef.current = false; setPhase('idle'); setDictationAvailable(true);
             setMicDiagnostic({ code, detail: safeSpeechErrorDetail(detail) });
             setMicWarning(code === 'MEMORY' ? message('الجهاز ما قدرش يشغّل نموذج الصوت بسبب الذاكرة. سد التطبيقات الأخرى وعاود المحاولة.', 'Mémoire insuffisante pour le modèle vocal. Fermez les autres applications et réessayez.', 'Not enough memory to run the speech model. Close other apps and retry.') : code === 'DOWNLOAD' ? message('تعذر تحميل نموذج الصوت. تأكد من الإنترنت وعاود المحاولة.', 'Le modèle vocal n’a pas pu être téléchargé. Vérifiez la connexion et réessayez.', 'Could not download the speech model. Check your connection and retry.') : code === 'TIMEOUT' ? message('توقف التحميل أو التحليل لمدة طويلة. تأكد من الإنترنت وعاود المحاولة.', 'Le téléchargement ou l’analyse a expiré. Vérifiez la connexion et réessayez.', 'The download or processing timed out. Check your connection and retry.') : message('ما قدرناش نشغّلو التعرف المحلي على هاد الجهاز. عاود المحاولة، أو جرّب مايك المتصفح إلا كان متوفراً.', 'Impossible de lancer la reconnaissance locale sur cet appareil. Réessayez ou essayez le micro du navigateur s’il est disponible.', 'Could not run local recognition on this device. Retry or try browser recognition if available.'));
@@ -268,27 +255,55 @@ export const PronunciationRecorder: React.FC<PronunciationRecorderProps> = ({
           const resetLocalWatchdog = () => {
             clearWatchdog(); timeoutRef.current = setTimeout(() => fail('TIMEOUT'), useSimd ? 240000 : 600000);
           };
-          worker.onerror = event => fail('WORKER', event.message);
-          worker.onmessage = event => {
-            if (session !== sessionRef.current) return;
-            const data = event.data;
-            if (data.status === 'loading' || data.status === 'progress') {
-              resetLocalWatchdog();
-              setLocalStatus(message('كنحمّلو نموذج الصوت لأول مرة…', 'Téléchargement du modèle vocal…', 'Downloading the speech model…'));
-            }
-            else if (data.status === 'transcribing') { resetLocalWatchdog(); setLocalStatus(useSimd ? message('كنحوّلو الصوت لنص على الجهاز…', 'Transcription sur l’appareil…', 'Transcribing on your device…') : message('كنحوّلو الصوت لنص بطريقة متوافقة مع جهازك، ممكن تاخذ وقت أطول…', 'Transcription compatible avec votre appareil : cela peut prendre plus de temps…', 'Transcribing in compatibility mode; this may take longer…')); }
-            else if (data.status === 'error') fail(classifyLocalSpeechError(data.stage, data.message || ''), data.message);
-            else if (data.status === 'done') {
-              clearWatchdog(); worker.terminate(); localWorkerRef.current = null;
-              busyRef.current = false; setPhase('idle');
-              const text = typeof data.text === 'string' ? data.text.trim() : '';
-              if (!text) setMicWarning(errorMessage('no-speech'));
-              else { setLiveTranscript(text); finalizeEvaluation(text); }
-            }
-          };
-          resetLocalWatchdog();
           const lang = (speechLang || audioLang).split('-')[0].toLowerCase();
-          worker.postMessage({ audio: samples, language: ['ar', 'fr', 'en', 'es'].includes(lang) ? lang : 'ar' }, [samples.buffer]);
+          const startWorker = () => {
+            if (session !== sessionRef.current) return;
+            try {
+              worker = useSimd
+                ? new Worker(new URL('../workers/localSpeech.ts', import.meta.url), { type: 'module' })
+                : new Worker(new URL('../workers/legacySpeech.ts', import.meta.url), { type: 'module' });
+            } catch (error) {
+              fail('WORKER', error instanceof Error ? error.message : String(error));
+              return;
+            }
+            const current = worker;
+            localWorkerRef.current = current;
+            current.onerror = event => { if (worker === current) fail('WORKER', event.message); };
+            current.onmessage = event => {
+              if (session !== sessionRef.current || worker !== current) return;
+              const data = event.data;
+              if (data.status === 'loading' || data.status === 'progress') {
+                resetLocalWatchdog();
+                setLocalStatus(message('كنحمّلو نموذج الصوت لأول مرة…', 'Téléchargement du modèle vocal…', 'Downloading the speech model…'));
+              } else if (data.status === 'transcribing') {
+                resetLocalWatchdog();
+                setLocalStatus(useSimd ? message('كنحوّلو الصوت لنص على الجهاز…', 'Transcription sur l’appareil…', 'Transcribing on your device…') : message('كنحوّلو الصوت لنص بطريقة متوافقة مع جهازك، ممكن تاخذ وقت أطول…', 'Transcription compatible avec votre appareil : cela peut prendre plus de temps…', 'Transcribing in compatibility mode; this may take longer…'));
+              } else if (data.status === 'error') {
+                const detail = typeof data.message === 'string' ? data.message : '';
+                // The page and worker may have different WebAssembly capabilities.
+                // Retry the same recording only for the explicit SIMD error, once.
+                if (useSimd && /webassembly simd is not supported/i.test(detail)) {
+                  clearWatchdog(); current.terminate(); worker = null; localWorkerRef.current = null;
+                  useSimd = false;
+                  setLocalStatus(message('كنعاودو بطريقة متوافقة مع الجهاز…', 'Nouvel essai en mode compatible…', 'Retrying in compatibility mode…'));
+                  startWorker();
+                } else fail(classifyLocalSpeechError(data.stage, detail), detail);
+              } else if (data.status === 'done') {
+                clearWatchdog(); current.terminate(); worker = null; localWorkerRef.current = null;
+                busyRef.current = false; setPhase('idle');
+                const text = typeof data.text === 'string' ? data.text.trim() : '';
+                if (!text) setMicWarning(errorMessage('no-speech'));
+                else { setLiveTranscript(text); finalizeEvaluation(text); }
+              }
+            };
+            resetLocalWatchdog();
+            try {
+              // Keep the original short recording for a compatibility retry.
+              // Structured clone keeps it local; no audio is uploaded.
+              current.postMessage({ audio: samples, language: ['ar', 'fr', 'en', 'es'].includes(lang) ? lang : 'ar' });
+            } catch (error) { fail('WORKER', error instanceof Error ? error.message : String(error)); }
+          };
+          startWorker();
         } catch (error) {
           if (session !== sessionRef.current) return;
           busyRef.current = false; setPhase('idle'); setDictationAvailable(true);

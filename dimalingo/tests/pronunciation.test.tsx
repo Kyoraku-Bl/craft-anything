@@ -171,9 +171,11 @@ class FakeRecorder {
 }
 class FakeWorker {
   static last: FakeWorker;
+  static instances: FakeWorker[] = [];
+  url: string;
   onmessage: ((event: any) => void) | null = null; onerror: (() => void) | null = null;
   posted: any; terminated = false;
-  constructor() { FakeWorker.last = this; }
+  constructor(url: URL) { this.url = String(url); FakeWorker.last = this; FakeWorker.instances.push(this); }
   postMessage(message: any) { this.posted = message; }
   terminate() { this.terminated = true; }
 }
@@ -202,13 +204,39 @@ await act(async () => FakeWorker.last.onmessage?.({data:{status:'done', text:'Bo
 assert.deepEqual(recognized, ['Bonjour']);
 assert(document.body.textContent?.includes('Recognized text match: 100%'));
 assert(FakeWorker.last.terminated);
+// A page's SIMD probe can pass while the worker rejects SIMD. Retry the same
+// recording in the compatibility worker; stale messages cannot score twice.
+await act(async () => click('Speak into mic'));
+await act(async () => click('Stop and transcribe'));
+const simdWorker = FakeWorker.last;
+assert(simdWorker.url.includes('localSpeech'));
+await act(async () => simdWorker.onmessage?.({data:{status:'error', stage:'loading', message:'Error: WebAssembly SIMD is not supported in the current environment.'}}));
+assert(simdWorker.terminated);
+const compatibilityWorker = FakeWorker.last;
+assert.notEqual(compatibilityWorker, simdWorker);
+assert(compatibilityWorker.url.includes('legacySpeech'));
+assert.equal(compatibilityWorker.posted.audio.length, 8000, 'same recording is retried');
+await act(async () => simdWorker.onmessage?.({data:{status:'done', text:'stale'}}));
+assert.deepEqual(recognized, ['Bonjour']);
+await act(async () => compatibilityWorker.onmessage?.({data:{status:'done', text:'Bonjour'}}));
+assert.deepEqual(recognized, ['Bonjour', 'Bonjour']);
+// If compatibility also fails, surface the diagnostic instead of looping.
+await act(async () => click('Speak into mic'));
+await act(async () => click('Stop and transcribe'));
+await act(async () => FakeWorker.last.onmessage?.({data:{status:'error', stage:'loading', message:'WebAssembly SIMD is not supported'}}));
+const lastRetry = FakeWorker.last;
+const workerCount = FakeWorker.instances.length;
+await act(async () => lastRetry.onmessage?.({data:{status:'error', stage:'loading', message:'WebAssembly SIMD is not supported'}}));
+assert.equal(FakeWorker.instances.length, workerCount, 'compatibility retry must happen only once');
+assert(lastRetry.terminated);
+assert(document.body.textContent?.includes('DLM-SPEECH-RUNTIME'));
 await act(async () => click('Speak into mic'));
 await act(async () => click('Stop and transcribe'));
 const oldWorker = FakeWorker.last;
 await act(async () => localRender('Merci'));
 assert(oldWorker.terminated);
 await act(async () => oldWorker.onmessage?.({data:{status:'done',text:'Bonjour'}}));
-assert.deepEqual(recognized, ['Bonjour'], 'stale local results must not be scored');
+assert.deepEqual(recognized, ['Bonjour', 'Bonjour'], 'stale local results must not be scored');
 await act(async () => click('Speak into mic'));
 await act(async () => click('Stop and transcribe'));
 await act(async () => FakeWorker.last.onmessage?.({data:{status:'error', stage:'loading', message:'TypeError: Failed to fetch https://example.com/model'}}));
@@ -216,7 +244,7 @@ assert(document.body.textContent?.includes('Could not download the speech model'
 assert(document.body.textContent?.includes('DLM-SPEECH-DOWNLOAD'));
 assert(!document.body.textContent?.includes('example.com/model'));
 assert(document.body.textContent?.includes('Try browser speech instead'));
-assert.equal(recognized.length, 1);
+assert.equal(recognized.length, 2);
 await act(async () => localRoot.unmount());
 
 // Installed profile URL must select local recognition even if the WebClip does
